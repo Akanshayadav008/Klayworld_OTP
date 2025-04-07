@@ -1,0 +1,110 @@
+.blog-section {
+  display: flex;
+  flex-wrap: wrap; /* Ensures responsiveness */
+  gap: 20px; /* Adds space between cards */
+  justify-content: center; /* Centers the cards */
+  margin-top: 100px;
+}
+
+.blog-card {
+  width: 45%; /* Adjusts width to fit two cards in a row */
+  max-width: 500px; /* Prevents cards from being too large */
+  border: 2px solid #ddd; /* Adds a subtle border */
+  border-radius: 10px; /* Soft rounded corners */
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.blog-card:hover {
+  transform: translateY(-5px); /* Hover effect */
+}
+
+.blog-image {
+  position: relative;
+}
+
+.blog-image img {
+  width: 100%; /* Ensure full width */
+  height: 300px; /* Set a fixed height */
+  object-fit: cover; /* Ensures the image is cropped properly */
+  display: block;
+}
+
+.blog-overlay {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 8px 12px;
+  color: #fff;
+  font-weight: bold;
+  font-style: italic;
+}
+
+.blog-category {
+  font-size: 14px;
+}
+
+.blog-content {
+  padding: 16px;
+  text-align: left; /* Align all text to center */
+}
+
+.blog-date {
+  font-size: 12px;
+  color: #777;
+}
+
+.blog-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 8px 0;
+}
+
+.blog-description {
+  font-size: 14px;
+  color: #555;
+}
+
+.blog-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding: 0 16px;
+}
+
+.read-more {
+  color: #000;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.read-more:hover {
+  text-decoration: underline;
+}
+
+.social-icons {
+  display: flex;
+  gap: 8px;
+}
+
+.icon {
+  font-size: 20px;
+  cursor: pointer;
+  color: #555;
+  transition: color 0.3s ease;
+}
+
+.icon:hover {
+  color: #000; /* Darker color on hover */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .blog-card {
+    width: 100%; /* Full width for smaller screens */
+  }
+}

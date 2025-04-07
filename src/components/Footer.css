@@ -1,0 +1,136 @@
+.footer {
+    background-color: #0a0a0a;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    padding: 40px 0;
+    margin-top: 40px;
+  }
+  
+  .footer-container {
+    display: flex;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    gap: 30px; /* Space between columns */
+  }
+  
+  .footer-column {
+    flex: 1;
+    min-width: 200px;
+  }
+  
+  .footer-brand {
+    flex: 2; /* Make brand column a bit wider if you like */
+  }
+  
+  .footer-title {
+   height: 40px;
+   width: auto;
+  }
+  
+  .footer-description {
+    line-height: 1.6;
+    font-size: 14px;
+    margin-right: 20px;
+    margin-top: 10px;
+  }
+  
+  .footer-heading {
+    font-size: 16px;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  .footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .footer-links li {
+    margin-bottom: 10px;
+  }
+  
+  .footer-links a {
+    color: #ffffff;
+    text-decoration: none;
+    transition: color 0.2s ease-in-out;
+  }
+  
+  .footer-links a:hover {
+    color: #aaaaaa;
+  }
+  
+  .footer-contact {
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  
+  .footer-email {
+    color: #ffffff;
+    text-decoration: none;
+  }
+  
+  .footer-email:hover {
+    color: #aaaaaa;
+  }
+  
+  /* Subscribe Section */
+  .footer-subscribe {
+    border-top: 1px solid #333333;
+    margin-top: 40px;
+    padding: 20px 0;
+    text-align: center;
+  }
+  
+  .subscribe-heading {
+    font-size: 18px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  .subscribe-text {
+    font-size: 14px;
+    margin-bottom: 20px;
+    color: #cccccc;
+  }
+  
+  .subscribe-form {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+  
+  .subscribe-input {
+    padding: 10px;
+    font-size: 14px;
+    border: none;
+    outline: none;
+    width: 250px;
+    max-width: 300px;
+    margin-right: 10px;
+    border-radius: 4px;
+  }
+  
+  .subscribe-button {
+    padding: 10px 16px;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    background-color: #ffffff;
+    color: #0a0a0a;
+    transition: background-color 0.2s ease-in-out;
+    margin-top: -15px;
+  }
+  
+  .subscribe-button:hover {
+    background-color: #dddddd;
+  }
+  
+  
+  

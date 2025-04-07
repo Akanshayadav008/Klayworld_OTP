@@ -1,0 +1,95 @@
+/* General Styling */
+.blog-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    color: #333;
+    margin-top: 60px;
+  }
+  
+  .blog-banner {
+    width: 100%;
+    height: 500px;
+    border-radius: 10px;
+  }
+  
+  .blog-content {
+    padding: 20px;
+  }
+  
+  .blog-title {
+    font-size: 24px;
+    font-weight: 400;
+    text-align: left;
+    margin-top: 20px;
+  }
+  
+  .blog-date {
+    font-size: 14px;
+    text-align: left;
+    color: gray;
+    margin-bottom: 15px;
+  }
+  
+  .blog-text {
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: justify;
+    margin-bottom: 10px;
+    margin-top: 20px;
+  }
+  
+  .section-title {
+    font-size: 20px;
+    font-weight: 400;
+    margin-top: 20px;
+  }
+  
+  .blog-list {
+    margin-left: 20px;
+    list-style: disc;
+  }
+  
+  .blog-list li {
+    margin-bottom: 8px;
+    font-size: 16px;
+  }
+  
+  .button-group {
+    text-align: center;
+    margin-top: 20px;
+  }
+  
+  .button {
+    color: white;
+    border: none;
+    padding: 10px 10px;
+    margin: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 20px;
+    background: none;
+  }
+ 
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .blog-container {
+      padding: 15px;
+    }
+  
+    .blog-title {
+      font-size: 20px;
+    }
+  
+    .blog-text {
+      font-size: 14px;
+    }
+  
+    .button {
+      font-size: 14px;
+      padding: 8px 15px;
+    }
+  }
+  

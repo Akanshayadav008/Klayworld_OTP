@@ -1,0 +1,35 @@
+.promoter-member {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    margin: auto;
+    max-width: 400px;
+    height: 100%;
+  }
+  
+  .promoter-member-image {
+    width: 100%;
+  }
+  
+  .promoter-member-info {
+    margin-top: 20px;
+    text-align: left;
+  }
+  
+  .promoter-member-name {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  .promoter-member-title {
+    font-size: 18px;
+    color: gray;
+  }
+  
+  .promoter-member-description {
+    font-size: 16px;
+    margin-top: 10px;
+    color: #555;
+  }
+  

@@ -1,0 +1,46 @@
+.brands-section {
+    text-align: center;
+    padding: 40px 0;
+    background:none;
+}
+
+.brands-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.line {
+    display: inline-block;
+    width: 50px;
+    height: 2px;
+    background-color: black;
+    margin: 0 10px;
+}
+
+.brands-slider {
+    max-width: 80%;
+    margin: 40px auto;
+}
+
+.brand-slide {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.brand-logo {
+    width: 120px;
+    height: auto;
+    object-fit: contain;
+    filter: grayscale(100%);
+    transition: filter 0.3s ease-in-out;
+    cursor: pointer;
+}
+
+.brand-logo:hover {
+    filter: grayscale(0%);
+}

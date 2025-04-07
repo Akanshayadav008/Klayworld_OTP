@@ -1,0 +1,245 @@
+.main-header {
+    margin: 0;
+    background-color: #fdf6ec;
+    border-bottom: 1px solid #E5E1DA;
+    padding: 1px 0; /* Keeps the same header padding */
+    display: flex;
+    justify-content: center;
+  }
+  
+  .logo img {
+    height: 25px; /* Adjust logo size */
+    width: auto; /* Maintain aspect ratio */
+    display: block;
+  }
+  
+  .container {
+    width: 90%;
+    max-width: 1400px;
+    display: flex;
+    margin: 0;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  /* Logo Styling */
+  
+  /* Contact Section */
+  .contact {
+    font-size: 14px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .phone-icon {
+    font-size: 18px;
+  }
+  
+  /* Navigation Menu */
+  .navbar ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 30px; /* Matches the spacing in your screenshot */
+  }
+  
+  .navbar ul li {
+    display: inline-block;
+  }
+  
+  .navbar ul li a {
+    text-decoration: none;
+    font-size: 14px;
+    color: #333;
+    padding: 5px 0;
+    position: relative;
+  }
+  
+  .navbar ul li a:hover,
+  .navbar ul li a:focus {
+    color: #000;
+    font-weight: bold;
+  }
+  
+  .navbar ul li a::after {
+    content: "";
+    display: block;
+    width: 0;
+    height: 2px;
+    background: #000;
+    transition: width 0.3s;
+  }
+  
+  .navbar ul li a:hover::after {
+    width: 100%;
+  }
+  
+  /* Search Section */
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .navbar {
+    position: relative;
+    z-index: 1000; /* Ensure it stays above other elements */
+}
+
+.dropdown-menu {
+    position: absolute;
+    background-color: white; /* Ensure visibility */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow for better distinction */
+    z-index: 1100; /* Higher than other elements */
+    cursor:pointer;
+}
+  .search-bar input {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-size: 14px;
+    margin-top: 10px;
+    width: 150px; /* Adjusted to match screenshot width */
+  }
+  
+  .search-bar button {
+    background-color: #fdf6ec;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 5px 10px;
+    color: #000;
+  }
+  
+  /* Dropdown Container */
+.dropdown {
+  position: relative;
+}
+
+/* Style for the Products dropdown */
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #FDF6EC !important; /* White background */
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  min-width: 150px; /* Adjust width */
+  opacity: 0;
+  gap:0px !important;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+/* Show dropdown on hover */
+.dropdown:hover .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Dropdown Items */
+.dropdown-menu li {
+  list-style: none;
+  padding: 0px 15px !important;
+  border-bottom: 1px solid #f0f0f0; /* Light separator */
+  white-space: nowrap;
+}
+
+/* Last item should not have a border */
+.dropdown-menu li:last-child {
+  border-bottom: none;
+}
+
+/* Links inside dropdown */
+.dropdown-menu li a {
+  color: black;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+  display: block;
+  padding: 8px 12px ;
+}
+
+/* Hover Effect */
+.dropdown-menu li a:hover {
+  background:none; /* Change background color */
+  color: white; /* White text */
+}
+
+/* Special Styling for Products Dropdown */
+.dropdown .dropdown-menu {
+  background-color: #f8f9fa; /* Light gray background */
+  border: 1px solid #ddd;
+}
+
+.dropdown .dropdown-menu li a:hover {
+  background:none; /* Custom hover color */
+  color: black;
+}
+
+
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .container {
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+  
+    .navbar ul {
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: center;
+    }
+  
+    .search-bar {
+        margin-top: 10px;
+    }
+  
+    /* Navigation Toggle Button */
+    .navbar-toggle {
+        display: block;
+        background-color: #fdf6ec;
+        border: none;
+        font-size: 16px;
+        color: #333;
+        cursor: pointer;
+        padding: 8px;
+        display: none;
+    }
+  
+    .navbar ul {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+  
+    .navbar ul.active {
+        display: flex;
+    }
+  
+    .navbar ul li {
+        width: 100%;
+        text-align: center;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .navbar-toggle {
+        display: block; /* Show the toggle button on 768px and below */
+    }
+  
+    .navbar ul {
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+    }
+  
+    .search-bar {
+        margin-top: 10px;
+    }
+  }

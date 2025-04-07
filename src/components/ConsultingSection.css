@@ -1,0 +1,53 @@
+.consulting-container {
+    text-align: center;
+    margin: 0px 0;
+  }
+  
+  .consulting-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    margin-top: 100px;
+  }
+  
+  .consulting-box {
+    background-color: #545454; /* Dark navy background */
+    padding: 30px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: 0px auto;
+  }
+  
+  .consulting-item {
+    text-align: center;
+    color: #fff;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .consulting-icon {
+    font-size: 40px;
+    color: #fff;
+  }
+
+  .calendly-container {
+    max-width: 1400px;  /* Keeps it within 1200px but adapts on smaller screens */
+    width: 100%;  /* Ensures flexibility */
+    margin: 0 auto;  /* Centers it */
+    padding: 0px;
+    min-height: 90vh;  /* Ensures full-screen height when necessary */
+    overflow-y: hidden;  /* Prevents unwanted scrolling */
+  }
+  .calendly-container iframe {
+    width: 100%;
+    max-width: 1400px !important;
+    height: 700px !important; /* Increase height to prevent scrolling */
+    border: none;
+    overflow: hidden; /* Ensure no scrolling */
+}

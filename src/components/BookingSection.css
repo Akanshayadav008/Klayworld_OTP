@@ -1,0 +1,92 @@
+/* BookingSection.css */
+.booking-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #00030e;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 80%;
+    margin: 40px auto;
+}
+
+.booking-text {
+    font-size: 18px;
+}
+
+.booking-button {
+    background-color: #ffcc00;
+    color: black;
+    font-weight: bold;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.booking-button:hover {
+    background-color: #e6b800;
+}
+
+
+/* BlogSection.css */
+
+.home-container {
+    text-align: center;
+    padding: 40px;
+    background:none;
+}
+
+.home-title {
+    font-size: 24px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.home-title::after {
+    content: "";
+    display: block;
+    width: 50px;
+    height: 2px;
+    background-color: black;
+    margin: 10px auto;
+}
+
+.home-grid {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.home-card {
+    width: 400px;
+    position: relative;
+    overflow: hidden;
+}
+
+.home-image {
+    width: 100%;
+    transition: transform 0.3s ease;
+}
+
+.home-card:hover .home-image {
+    transform: scale(1.05);
+}
+
+.view-more-button {
+    margin-top: 20px;
+    background-color: #020924;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.view-more-button:hover {
+    background-color: #001f6b;
+}

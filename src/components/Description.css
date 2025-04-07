@@ -1,0 +1,110 @@
+  .product-container {
+      display: flex;
+      max-width: 1200px;
+      margin: 20px auto;
+      background-color: #fdf6ec;
+      padding: 20px;
+  }
+
+  /* Product Gallery */
+  .product-gallery {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border-right: 1px solid #f0f0f0;
+      padding-right: 20px;
+  }
+
+  .product-gallery img {
+      width: 80%;
+      max-width: 400px;
+      margin-bottom: 10px;
+  }
+
+  /* Product Details */
+  .product-details {
+      flex: 2;
+      padding-left: 20px;
+  }
+
+  .product-details h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+  }
+
+  .product-price {
+      font-size: 18px;
+      color: #545454;
+      margin: 10px 0;
+  }
+
+
+
+
+  button#buyNow {
+      background-color: #545454;
+      color: #fff;
+      padding: 15px;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 20px;
+  }
+
+  button#buyNow:hover {
+      background-color: #545454;
+  }
+
+  .space-box-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 10px 0;
+      color: #545454;
+  }
+
+  .space-box {
+      padding: 8px 15px;
+      border: 1px solid #545454;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      font-size: 14px;
+      font-weight: bold;
+      color: #545454;
+  }
+
+  .option-box {
+      display: inline-block;
+      padding: 10px 15px;
+      margin: 5px;
+      border: 2px solid #E5E1DA;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #E5E1DA;
+      font-weight: bold;
+      text-align: center;
+  }
+
+  .option-box.selected {
+      border-color: #545454;
+      background-color: #E5E1DA;
+      color: #545454;
+  }
+
+  .category-button {
+      padding: 10px 15px;
+      margin: 5px;
+      border: 1px solid #E5E1DA;
+      background-color: #E5E1DA;
+      color: #545454d3;
+      cursor: pointer;
+  }
+
+  .category-button.selected {
+      background-color: #E5E1DA;
+      color: #0c0b0b;
+      border-color: #545454;
+  }

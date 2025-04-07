@@ -1,0 +1,320 @@
+/* General Reset */
+body {
+    margin: 0;
+    font-family: 'Inter';
+    background-color: #fdf6ec;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .container {
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+
+    .navbar ul {
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: center;
+    }
+
+    .search-bar {
+        margin-top: 10px;
+    }
+
+    /* Navigation Toggle Button */
+    .navbar-toggle {
+        display: block;
+        background-color: #fdf6ec;
+        border: none;
+        font-size: 16px;
+        color: #333;
+        cursor: pointer;
+        padding: 8px;
+        display: none;
+    }
+
+    .navbar ul {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .navbar ul.active {
+        display: flex;
+    }
+
+    .navbar ul li {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar-toggle {
+        display: block; /* Show the toggle button on 768px and below */
+    }
+
+    .navbar ul {
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .search-bar {
+        margin-top: 10px;
+    }
+    .container2 {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.container2 {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 20px 80px 20px 80px;
+    border-top: 1px solid #ddd;
+}
+
+.content2 {
+    display: flex;
+    justify-content: flex-start;
+    width: 90%;
+    max-width: 1400px;
+}
+
+.title {
+    font-size: 29px;
+    font-weight: 400;
+    margin-bottom: 20px;
+    line-height: 38px;
+    word-spacing: 3px;
+    color: #000;
+}
+
+.description {
+    font-size: 1rem;
+    margin-bottom: 30px;
+    line-height: 1.5;
+}
+
+.shop-now-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 11px;
+    font-weight: 400;
+    text-decoration: none;
+    cursor: pointer;
+    background-color: #4a4a4a;
+    color: #fff;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.shop-now-btn:hover {
+    background-color: #333;
+}
+
+.social-media {
+    margin-top: 90px;
+    font-size: 0.8rem;
+    text-align: right;
+    color: #7a7a7a;
+}
+
+@media (min-width: 768px) {
+   
+    .content2 {
+        max-width: 60%;
+    }
+
+    .social-media {
+        margin-top: 0;
+        text-align: right;
+    }
+}
+
+.Bytext {
+    padding: 13px;
+    display: flex;
+    gap: 25px;
+    border-radius: 2px;
+    margin: 30px;
+    background-color:rgba(0, 0, 0, 0.1);
+}
+
+.Byimage {
+    padding: 15px;
+    display: flex;
+    border-radius: 2px;
+    gap: 15px;
+    margin: 30px;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.gif-image {
+    visibility: hidden; /* Initially hidden */
+    position: absolute;
+    top: 0; /* Cover from the top */
+    left: 0; /* Cover from the left */
+    width: 100%; /* Full width of the container */
+    height: 100%; /* Full height of the container */
+    object-fit: cover; /* Ensure proportional scaling */
+    pointer-events: none; /* Prevent interaction */
+    background-color: transparent; /* Ensure no background color */
+    outline: none; /* Remove focus outlines */
+}
+
+.gif-space {
+    position: relative; /* Needed for absolute positioning inside */
+    overflow: hidden; /* Prevent overflow */
+    padding: 0; /* Remove padding */
+    margin: 0; /* Remove margin */
+    background-color: transparent; /* Ensure a clean background */
+    border: none; /* Remove borders if any */
+}
+
+.gif-space:hover .gif-image {
+    visibility: visible; /* Show the GIF on hover */
+    animation: none !important; /* Optional smooth fade-in animation */
+}
+
+.gif-space:hover .Byimage,
+.gif-space:hover .Bytext {
+    outline: none; /* Remove focus outline from text and icon */
+}
+
+.gif-space .icon:focus,
+.gif-space .button-text:focus,
+.gif-space .Byimage:focus,
+.gif-space .Bytext:focus {
+    outline: none !important; /* Remove focus outline on focus state */
+    box-shadow: none !important; /* Remove box-shadow if it's applied */
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.title {
+    /* Define title styles */
+    font-size: 2rem;
+  }
+  
+  /* Description container and text */
+  
+  
+  .description {
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+  
+  /* Shop now button styling */
+  .shop-now-btn {
+    background-color: #000;
+    color: #fff;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 4px;
+  }
+  
+  /* Social media text styling */
+  .social-media {
+    margin-top: 120px;
+    font-size: 1rem;
+    margin-right: 0px;
+    margin-left: 430px;
+  }
+  
+  /* Background section */
+  .background-section {
+    display: flex;
+    padding: 0px 80px 20px 80px;
+  }
+  
+  /* Overlay styling with background image */
+  .overlay {
+    position: relative;
+    width: 100%;
+    height: 480px;
+    background-image: url("images/Background-image.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+  }
+  
+  /* Button container inside overlay */
+  .button-container {
+    display: flex;
+    gap: 30px;
+    justify-content: space-evenly;
+    position: absolute;
+    left: 30px;
+    bottom: 10px;
+    border-radius: 2px;
+    border: 1px solid grey;
+    padding: 30px;
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Link style to remove default anchor styling */
+  .link-style {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  /* GIF space styling */
+  .gif-space {
+    border: 1px solid grey;
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+  
+  /* Icon and button text styling within GIF space */
+  .Byimage .icon,
+  .Bytext .icon {
+    margin-right: 5px;
+  }
+  
+  .button-text {
+    font-size: 1rem;
+    font-weight: 500;
+  }
+  
+  /* GIF image styling */
+  .gif-image {
+    cursor: pointer;
+    width: 100%; /* Adjust as needed */
+    height: 100%;
+    display: block;
+    margin-top: 0px;
+  }
+  
+  /* Social icons container */
+  .social-icons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin-left: 20px;
+  }
+  
+  /* Social icons styling */
+  .social-icons i {
+    color: rgb(56, 56, 55);
+    font-size: 20px;
+  }

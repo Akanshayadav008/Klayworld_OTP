@@ -1,0 +1,52 @@
+.team-container {
+    text-align: center;
+    padding: 50px 20px;
+  }
+  
+  .team-title {
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  .team-subtitle {
+    font-size: 18px;
+    color: #666;
+    max-width: 600px;
+    margin: 0 auto 40px;
+  }
+  
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(350px, 1fr));
+    justify-content: center;
+    gap: 50px;
+    flex-wrap: wrap;
+    margin-top: 40px;
+  }
+  
+  .team-member {
+    text-align: center;
+    max-width: 500px;
+    width: 100%;
+  }
+  
+  .team-image {
+    width: 350px; 
+    height: 400px; 
+    object-fit: cover; 
+
+  }
+  
+  .team-name {
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 10px;
+  }
+  
+  
+.team-desc {
+    font-size: 16px;
+    color: #777;
+    margin-top: 5px;
+  }
