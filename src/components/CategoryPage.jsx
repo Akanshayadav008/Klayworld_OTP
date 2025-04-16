@@ -11,9 +11,11 @@ const CategoryPage = () => {
   const navigate = useNavigate();
   const [finishes, setFinishes] = useState([]);
 
-  // Capitalize first letter to match Firestore data
-  const formattedCategory =
-    category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+  // Convert "living-room" to "Living Room"
+  const formattedCategory = category
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 
   useEffect(() => {
     const fetchFinishes = async () => {
@@ -40,8 +42,8 @@ const CategoryPage = () => {
           if (data.finish && Array.isArray(data.finish)) {
             data.finish.forEach((finish) => {
               if (!finishMap.has(finish)) {
-                let imageURL = "https://via.placeholder.com/150"; // Default image
-                
+                let imageURL = "https://via.placeholder.com/150";
+
                 if (data.image && Array.isArray(data.image) && data.image.length > 0) {
                   imageURL = data.image[0];
                 } else if (data.tileImage && Array.isArray(data.tileImage) && data.tileImage.length > 0) {
@@ -65,7 +67,6 @@ const CategoryPage = () => {
     fetchFinishes();
   }, [formattedCategory]);
 
-  // ✅ Navigate to search page with selected category & finish
   const handleFinishClick = (finish) => {
     navigate(`/productsearch?category=${formattedCategory.toLowerCase()}&finish=${finish.toLowerCase()}`);
   };

@@ -14,6 +14,9 @@ import Blog1 from './components/Blog1';
 import Blog2 from './components/Blog2';
 import CategoryPage from './components/CategoryPage';
 import Search from "./components/ProductSearchPage";
+import AddToGallery from "./components/AddToGallery";
+import DeliveryAddress from "./components/DeliveryAddress";
+import OrderSuccess from "./components/OrderSuccess";
 
 function App() {
   return (
@@ -33,7 +36,9 @@ function App() {
           <Route path="/Blog2" element={<Blog2 />} />
          <Route path="/collection/:category" element={<CategoryPage />} />
          <Route path="/productsearch" element={<Search />} />
-
+         <Route path="/AddToGallery" element={<AddToGallery />} />
+         <Route path="/DeliveryAddress" element={<DeliveryAddress />} />
+         <Route path="/order-success" element={<OrderSuccess />} />
 
 
         </Routes>

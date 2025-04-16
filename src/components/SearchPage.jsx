@@ -461,26 +461,26 @@ const ProductSearch = () => {
 
                     {/* Category Filter */}
                     <div id="categoryFilterContainer">
-                        <label htmlFor="categoryDropdown">Filter:</label>
-                        <div id="toggleCategoryDropdown" onClick={toggleCategoryDropdown}>
-                            Select Space
-                        </div>
-                        {categoryDropdownVisible && (
-                            <div id="categoryDropdown">
-                                {categoryOptions.map((category) => (
-                                    <div key={category} className="category-option">
-                                        <input
-                                            type="checkbox"
-                                            value={category}
-                                            onChange={updateCategoryFilter}
-                                            checked={selectedCategories.includes(category)}
-                                        />
-                                        <label>{category}</label>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+            <label htmlFor="categoryDropdown">Filter:</label>
+            <div id="toggleCategoryDropdown" onClick={toggleCategoryDropdown}>
+              Select Space
+            </div>
+            {categoryDropdownVisible && (
+              <div id="categoryDropdown">
+                {categoryOptions.map((category) => (
+                  <div key={category} className="category-option">
+                    <input
+                      type="checkbox"
+                      value={category}
+                      onChange={updateCategoryFilter}
+                      checked={selectedCategories.has(category)}
+                    />
+                    <label>{category}</label>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
 
                     {/* Finish Filter */}
@@ -613,7 +613,7 @@ const ProductSearch = () => {
                                         <div className="image-container">
                                             <div className="spinner"></div>
                                             <img
-                                                src={`http://147.93.28.17:3000/convertToWebP?url=${encodeURIComponent(product.tileImage)}`}
+                                                src={`https://converter.klayworld.com/convertToWebP?url=${encodeURIComponent(product.tileImage)}`}
                                                 alt={product.name}
                                                 loading="lazy"
                                                 className="product-image"
@@ -696,7 +696,6 @@ const ProductSearch = () => {
                     )}
                 </div>
             </div>
-            
         </div>
     );
 };

@@ -1,0 +1,144 @@
+.delivery-container {
+    background-color: #fef9f1;
+    padding: 24px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    max-width: 1000px;
+    margin: auto;
+    font-family: Arial, sans-serif;
+  }
+  
+  .delivery-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .delivery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  
+  .delivery-input {
+    width: 100%;
+    padding: 10px 12px;
+    margin: 5px 0;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+  }
+  
+  /* Optional: Add a custom arrow to the select */
+  .delivery-input:has(option) {
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D'12'%20height%3D'8'%20viewBox%3D'0%200%2012%208'%20fill%3D'none'%20xmlns%3D'http%3A//www.w3.org/2000/svg'%3E%3Cpath%20d%3D'M1%201L6%206L11%201'%20stroke%3D'%23999'%20stroke-width%3D'2'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+  }
+  
+  select.delivery-input {
+    height: 40px;
+    cursor: pointer;
+  }
+  
+  .delivery-button-wrapper {
+    text-align: right;
+    margin-top: 20px;
+    grid-column: span 3;
+  }
+  
+  .delivery-submit-btn {
+    background-color: #333;
+    color: white;
+    padding: 8px 16px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .delivery-submit-btn:hover {
+    background-color: #555;
+  }
+  
+  /* --- OTP MODAL STYLES (UPDATED) --- */
+  .otp-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+  }
+  
+  .otp-modal-content {
+    background: white;
+    padding: 30px 40px;
+    border-radius: 10px;
+    text-align: center;
+    width: 320px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+  }
+  
+  .otp-modal-content h2 {
+    margin-bottom: 10px;
+    font-size: 22px;
+  }
+  
+  .otp-subtext {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 20px;
+  }
+  
+  .otp-input-box {
+    font-size: 1.2rem;
+    padding: 10px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
+    box-sizing: border-box;
+  }
+  
+  .verify-btn {
+    background-color: #333;
+    color: white;
+    padding: 10px;
+    width: 100%;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  
+  .verify-btn:hover {
+    background-color: #555;
+  }
+  
+  .resend-text {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #555;
+    cursor: pointer;
+  }
+  
+  .resend-text span {
+    color: #007bff;
+    font-weight: bold;
+    text-decoration: underline;
+  }
+  

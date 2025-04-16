@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPhone, faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
+import { faPhone, faMagnifyingGlass, } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 import "../components/Header.css";
+
 
 function Header() {
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -54,10 +56,13 @@ function Header() {
 
         <div className="search-bar">
           <input type="text" placeholder="Search" />
-          <button>
+          <button className="search-button">
             <FontAwesomeIcon icon={faMagnifyingGlass} />
           </button>
         </div>
+        <a href="/AddToGallery" className="add-to-gallery-button">
+          <FontAwesomeIcon icon={faCartShopping} style={{ marginRight: '5px' }} />
+        </a>
       </div>
     </header>
   );

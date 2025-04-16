@@ -22,20 +22,6 @@ const ImageSection = () => {
     Countertops: "/images/countertop.jpg",
     default: "/images/living-room.webp",
   };
-  
-  // Function to format the category name to match image keys
-  const formatCategoryKey = (category) => {
-    return category
-      .toLowerCase()
-      .replace(/\s+/g, '') // Remove spaces
-      .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize first letter
-  };
-  
-  const selectedCategory = "Living Room"; // Fetched from Firestore
-  const formattedCategory = formatCategoryKey(selectedCategory);
-  const imageSrc = categoryImages[formattedCategory] || categoryImages.default;
-  
-  console.log(imageSrc);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -64,7 +50,7 @@ const ImageSection = () => {
         const finalCategories = Array.from(uniqueCategories).map((category) => ({
           id: category,
           label: category,
-          image: categoryImages[category] || categoryImages.default, // Use static images
+          image: categoryImages[category] || categoryImages.default,
         }));
 
         console.log("✅ Fetched Categories with Static Images:", finalCategories);
@@ -78,11 +64,8 @@ const ImageSection = () => {
   }, []);
 
   const handleCategoryClick = (category) => {
-    if (category === "Living Room") {
-      navigate(`/collection?category=${encodeURIComponent(category)}`);
-    } else {
-      navigate(`/collection/${category.toLowerCase().replace(/\s+/g, "-")}`);
-    }
+    const formattedRoute = category.toLowerCase().replace(/\s+/g, "-");
+    navigate(`/collection/${formattedRoute}`);
   };
 
   return (

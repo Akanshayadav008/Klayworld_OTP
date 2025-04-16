@@ -1,0 +1,85 @@
+body {
+    background-color: #faf6f2;
+    font-family: Arial, sans-serif;
+  }
+  
+  .os-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 50px 20px;
+    min-height: 80vh;
+  }
+  
+  .os-box {
+    background: #fff;
+    padding: 30px;
+    border: 2px solid #cce5ff;
+    border-radius: 10px;
+    max-width: 1400px;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .os-success {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #2e7d32;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+  
+  .os-success span {
+    font-size: 24px;
+    margin-right: 10px;
+  }
+  
+  .os-logo-section {
+    background-color: #e6f0ff;
+    padding: 40px 0;
+    margin-bottom: 20px;
+  }
+  
+  .os-logo-section img {
+    height: 40px;
+  }
+  
+  .os-text {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  
+  .os-contact {
+    font-weight: bold;
+    text-decoration: underline;
+  }
+  
+  .os-buttons {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .os-btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  
+  .os-home-btn {
+    background-color: #333;
+    color: white;
+  }
+  
+  .os-shop-btn {
+    background-color: #333;
+    color: white;
+  }
+  

@@ -104,13 +104,13 @@
     width: 150px; /* Adjusted to match screenshot width */
   }
   
-  .search-bar button {
-    background-color: #fdf6ec;
-    border: none;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 5px 10px;
-    color: #000;
+  .search-button {
+    background-color: #fdf6ec !important;
+    border: none !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    padding: 5px 10px !important;
+    color: #000 !important;
   }
   
   /* Dropdown Container */
@@ -242,4 +242,15 @@
     .search-bar {
         margin-top: 10px;
     }
+  }
+
+
+  .add-to-gallery-button{
+    color: #000;
+    text-decoration: none;
+    font-size:17px;
+  }
+  .add-to-gallery-button:hover{
+    color:black;
+
   }

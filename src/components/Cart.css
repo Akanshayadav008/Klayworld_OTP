@@ -1,0 +1,131 @@
+/* ShoppingCart.css */
+
+.simple-cart-wrapper {
+    background-color: #fdf6ec;
+    padding: 2rem;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    width: 70%;
+  }
+  
+  .simple-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 1rem;
+  }
+  
+  .simple-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 500;
+  }
+  
+  .add-address-btn {
+    padding: 0.3rem 0.7rem;
+    font-size: 0.85rem;
+    border: 1px solid #888;
+    background-color: white;
+    cursor: pointer;
+    border-radius: 4px;
+    color: #333;
+  }
+  
+  .add-address-btn:hover {
+    background-color: #f0f0f0;
+  } 
+  
+  .simple-cart-items {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .simple-cart-item {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 1rem;
+  }
+  
+  .simple-item-info {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .simple-item-img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border: 1px solid #ddd;
+  }
+  
+  .simple-item-title {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  
+  .simple-item-sub {
+    font-style: italic;
+    font-size: 0.85rem;
+    color: #555;
+    margin-top: 2px;
+  }
+  
+  .simple-item-desc {
+    font-size: 0.8rem;
+    color: #333;
+    margin-top: 2px;
+  }
+  
+  .simple-item-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .simple-item-price {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  
+  .simple-qty-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid #aaa;
+    padding: 2px 5px;
+    border-radius: 5px;
+  }
+  
+  .simple-qty-ctrl button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #000;
+  }
+  
+  .simple-icons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    cursor: pointer;
+  }
+  
+  .back-arrow {
+    cursor: pointer;
+  }
+
+  .column-cart{
+    display: flex;
+    justify-content: space-between;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .cart-column-order{
+margin-top: 50px;
+  }
+  

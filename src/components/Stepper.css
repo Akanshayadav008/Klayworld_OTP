@@ -1,0 +1,107 @@
+.stepper-container {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.stepper-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.stepper-box {
+  display: flex;
+  justify-content: space-between;
+}
+
+.stepper-step {
+  text-align: center;
+}
+
+.stepper-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: lightgray;
+  margin: 0 auto;
+}
+
+.stepper-circle.active {
+  background-color: none;
+}
+
+.stepper-circle.completed {
+  background-color: none;
+}
+
+.stepper-circle.pending {
+  background-color: lightgray;
+}
+
+.inner-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: white;
+}
+
+.inner-dot.dot-active {
+  background-color: red;
+}
+
+.inner-dot.dot-completed {
+  background-color: green;
+}
+
+.inner-dot.dot-pending {
+  background-color: gray;
+}
+
+.step-label {
+  margin-top: 5px;
+  font-size: 12px;
+}
+
+.step-title {
+  font-size: 14px;
+}
+
+.step-status {
+  font-size: 12px;
+  color: gray;
+}
+
+.step-line {
+  width: 30px;
+  height: 2px;
+  background-color: lightgray;
+  margin: 0 auto;
+  margin-top: 10px;
+}
+
+.step-line.line-active {
+  background-color: green;
+}
+
+.step-line.line-pending {
+  background-color: lightgray;
+}
+
+.navigation-buttons {
+  margin-top: 20px;
+}
+
+.navigation-buttons button {
+  margin: 0 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.navigation-buttons button:disabled {
+  cursor: not-allowed;
+  background-color: lightgray;
+}

@@ -4,13 +4,15 @@ import { collection, getDocs } from "firebase/firestore";
 import Header from "./Header";
 import "./ImageSearch.css";
 
+
 // Helper function to clean up size strings
 function cleanSize(size) {
   return size.replace(/['"\s]/g, "").replace(/mm|cm/g, "").trim();
 }
 
+
 const ImageSearch = () => {
-  // States for file, preview image, search results, filters and loading spinner
+  // States for file, preview image, search results, filters, and loading spinner
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadedImage, setUploadedImage] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -18,13 +20,17 @@ const ImageSearch = () => {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
   const [finishes, setFinishes] = useState([]);
-  // These states are for the filter input values
+
+
+  // Filter input state
   const [filterCategory, setFilterCategory] = useState("");
   const [filterFinish, setFilterFinish] = useState("");
   const [filterSize, setFilterSize] = useState("");
   const [filterMin, setFilterMin] = useState("");
   const [filterMax, setFilterMax] = useState("");
-  // Applied filters state – filtering is based on these values
+
+
+  // Applied filters
   const [appliedFilters, setAppliedFilters] = useState({
     category: "",
     finish: "",
@@ -32,16 +38,22 @@ const ImageSearch = () => {
     min: "",
     max: ""
   });
+
+
   const [filterVisible, setFilterVisible] = useState(false);
   const collectionName = "products";
 
-  // On mount, restore any previously stored image or results from sessionStorage
+
+  // On mount, restore any previously stored image or results
   useEffect(() => {
     const storedImage = sessionStorage.getItem("uploadedImage");
     if (storedImage) setUploadedImage(storedImage);
+
+
     const storedResults = sessionStorage.getItem("searchResults");
     if (storedResults) setSearchResults(JSON.parse(storedResults));
   }, []);
+
 
   // Fetch categories from Firestore on component mount
   useEffect(() => {
@@ -62,6 +74,7 @@ const ImageSearch = () => {
     fetchCategories();
   }, []);
 
+
   // Fetch finishes from Firestore on component mount
   useEffect(() => {
     const fetchFinishes = async () => {
@@ -81,10 +94,13 @@ const ImageSearch = () => {
     fetchFinishes();
   }, []);
 
-  // Handle file selection and preview update
+
+  // Handle file selection and preview
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     setSelectedFile(file);
+
+
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -99,7 +115,8 @@ const ImageSearch = () => {
     }
   };
 
-  // Handle form submission to upload image and fetch search results
+
+  // Handle form submission to upload image & get search results
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!selectedFile) {
@@ -107,22 +124,27 @@ const ImageSearch = () => {
       return;
     }
 
+
     const formData = new FormData();
     formData.append("file", selectedFile);
     formData.append("searchType", searchType);
 
+
     setLoading(true);
     setSearchResults([]);
 
+
     try {
-      const response = await fetch("http://147.93.28.17:8000/upload", {
+      const response = await fetch("https://image.klayworld.com/upload", {
         method: "POST",
         body: formData,
       });
 
+
       if (!response.ok) {
         throw new Error("Failed to fetch results. Please try again.");
       }
+
 
       const data = await response.json();
       if (data.top_matches && data.top_matches.length > 0) {
@@ -140,9 +162,54 @@ const ImageSearch = () => {
     }
   };
 
-  // Compute filtered results based on the applied filter criteria
+
+  /**
+   * handleImageLoad
+   * For each loaded image, we force it into a 160x130 container (thumbnail style).
+   * If the image is taller than it is wide (portrait orientation), we rotate it 90°
+   * so that it still fits neatly within the same container size.
+   */
+  const handleImageLoad = (e) => {
+    const img = e.target;
+    const container = img.parentElement;
+   
+    // Set container dimensions
+    container.style.width = "160px";
+    container.style.height = "130px";
+    container.style.display = "flex";
+    container.style.alignItems = "center";
+    container.style.justifyContent = "center";
+    container.style.overflow = "hidden";
+
+
+    // Reset any previous transformations
+    img.style.transform = "";
+    img.style.width = "";
+    img.style.height = "";
+
+
+    // Calculate aspect ratios
+    const containerRatio = 160 / 130; // width/height
+    const imageRatio = img.naturalWidth / img.naturalHeight;
+
+
+    if (imageRatio > containerRatio) {
+      // Image is wider than container
+      img.style.width = "100%";
+      img.style.height = "100%";
+      img.style.objectFit = "cover";
+    } else {
+      // Image is taller than container
+      img.style.width = "100%";
+      img.style.height = "100%";
+      img.style.objectFit = "cover";
+    }
+  };
+
+
+  // Filter the results based on user-applied filters
   const filteredResults = searchResults.filter((match) => {
-    // Handle category: if array, join into a string.
+    // Handle category: if array, join into a string
     const categoryString = Array.isArray(match.category)
       ? match.category.join(" ")
       : (match.category || "N/A");
@@ -150,12 +217,14 @@ const ImageSearch = () => {
       ? match.finish.join(" ")
       : (match.finish || "N/A");
 
+
     const category = categoryString.toLowerCase();
     const finish = finishString.toLowerCase();
     const sizes = Array.isArray(match.sizes)
       ? match.sizes.map((s) => cleanSize(s.toLowerCase()))
       : [];
     const price = parseFloat(match.price) || 0;
+
 
     const matchesCategory =
       appliedFilters.category === "" ||
@@ -170,19 +239,22 @@ const ImageSearch = () => {
     const maxPrice = appliedFilters.max ? parseFloat(appliedFilters.max) : Infinity;
     const matchesPrice = price >= minPrice && price <= maxPrice;
 
+
     return matchesCategory && matchesFinish && matchesSize && matchesPrice;
   });
 
-  // Handler for when "Apply Filters" is pressed
+
+  // Apply filters
   const applyFiltersHandler = () => {
     setAppliedFilters({
       category: filterCategory,
       finish: filterFinish,
       size: filterSize,
       min: filterMin,
-      max: filterMax
+      max: filterMax,
     });
   };
+
 
   return (
     <div>
@@ -249,6 +321,11 @@ const ImageSearch = () => {
                       id="uploadedImagePreview"
                       src={uploadedImage}
                       alt="Uploaded Preview"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "200px",
+                        objectFit: "cover",
+                      }}
                     />
                   )}
                 </div>
@@ -274,7 +351,9 @@ const ImageSearch = () => {
             </section>
           </div>
 
+
           <div className="vertical-line"></div>
+
 
           {/* Results Section */}
           <div className="resultbox">
@@ -394,26 +473,63 @@ const ImageSearch = () => {
                   </button>
                 </div>
               )}
-              
-              <div id="results" className="results-grid">
               {loading && (
-                <div id="loadingSpinner" className="spinner" style={{ display: "block"}}>
-                  {/* You can style or animate this spinner via CSS */}
+                <div id="loadingSpinner" className="spinner" style={{ display: "block" }}>
+                  {/* Loading spinner styling via CSS */}
                 </div>
               )}
+              <div id="results" className="results-grid">
                 {filteredResults.length > 0 ? (
                   filteredResults.map((match, index) => (
                     <a
-                      key={index}
-                      href={`product-details?id=${match.product_id}`}
-                      className="result-card"
-                    >
-                      <img src={match.tileImage} alt={match.name} />
+                    key={index}
+                    href={`product-details?id=${match.product_id}`}
+                    className="result-card"
+                  >
+                      {/* Container to force a fixed size: 160x130 */}
+                      <div
+                        style={{
+                          position: "relative",
+                          width: "160px",
+                          height: "130px",
+                          overflow: "hidden",
+                          borderRadius:"10px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          margin:"auto"
+                        }}
+                      >
+                        
+                        <img
+                          src={`https://converter.klayworld.com/convertToWebP?url=${encodeURIComponent(match.tileImage)}`}
+                          alt={match.name}
+                          onLoad={handleImageLoad}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            borderRadius: "10px",
+                            boxShadow: "0 0 10px 0 rgba(0, 0, 0, 0.5)",
+                            transition: "all 0.3s ease",
+                            cursor: "pointer",
+                           
+                          }}
+                        />
+                      </div>
+
+
                       <div className="tile-name">{match.name}</div>
-                      <div style={{display: "none"}} className="tile-category">{match.category || "N/A"}</div>
-                      <div style={{display: "none"}} className="tile-finish">{match.finish || "N/A"}</div>
-                      <div style={{display: "none"}} className="tile-price">{match.price || 0}</div>
-                      <div style={{display: "none"}} className="tile-sizes">
+                      <div style={{ display: "none" }} className="tile-category">
+                        {match.category || "N/A"}
+                      </div>
+                      <div style={{ display: "none" }} className="tile-finish">
+                        {match.finish || "N/A"}
+                      </div>
+                      <div style={{ display: "none" }} className="tile-price">
+                        {match.price || 0}
+                      </div>
+                      <div style={{ display: "none" }} className="tile-sizes">
                         {match.sizes && Array.isArray(match.sizes)
                           ? match.sizes.map(cleanSize).join(",")
                           : "N/A"}
@@ -432,4 +548,8 @@ const ImageSearch = () => {
   );
 };
 
+
 export default ImageSearch;
+
+
+
