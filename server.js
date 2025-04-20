@@ -1,85 +1,106 @@
-
 const express = require("express");
-const cors = require("cors"); // Import the cors package
-const sharp = require("sharp");
-const fetch = require("node-fetch");
+const cors = require("cors");
 const nodemailer = require("nodemailer");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Enable cors for all requests
 app.use(cors());
-
-// Middleware for JSON parsing
 app.use(express.json());
 
-// === Convert to WebP Route ===
-app.get("/convertToWebP", async (req, res) => {
-  try {
-    const imageUrl = req.query.url;
-    if (!imageUrl) {
-      return res.status(400).send("Image URL is required.");
-    }
-
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      return res.status(400).send("Unable to fetch image.");
-    }
-
-    const buffer = await response.buffer();
-    const webpBuffer = await sharp(buffer)
-      .webp({ quality: 75 })
-      .toBuffer();
-
-    res.set("Content-Type", "image/webp");
-    res.send(webpBuffer);
-  } catch (error) {
-    console.error("Error converting image:", error);
-    res.status(500).send("Error converting image.");
-  }
+// Setup mail transporter
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,     // Your Gmail
+    pass: process.env.EMAIL_PASS      // App password
+  },
 });
-
-// === Send Order Success Email Route ===
 app.post("/send-success-email", async (req, res) => {
-  const { to } = req.body;
-  
-  if (!to) {
-    return res.status(400).json({ message: "Email address is required." });
-  }
-  
+  const { customerEmail, deliveryData, cartItems = [], subtotal = 0 } = req.body;
+
+  const adminEmail = process.env.ADMIN_EMAIL || "deepanshurao68@gmail.com";
+  const delivery = 20;
+  const total = subtotal + delivery;
+
+  // 1️⃣ 🎉 Email to Customer
+  const customerMail = {
+    from: `"Klay World" <${process.env.EMAIL_USER}>`,
+    to: customerEmail,
+    subject: "🎉 Order Placed Successfully!",
+    html: `
+      <h2>Thank you for your order!</h2>
+      <p>Your order is confirmed. We’ll notify you once it's shipped.</p>
+      <p>📞 Support: +91-9998333033</p>
+    `,
+  };
+
+  // 2️⃣ 📦 Email to Admin (use your formatted template)
+  const adminMail = {
+    from: `"Klay World" <${process.env.EMAIL_USER}>`,
+    to: adminEmail,
+    subject: "📦 New Order Placed - Klay World",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 700px; margin: auto;">
+        <h2 style="color: #333;">Order Summary</h2>
+        <p><strong>Customer Name:</strong> ${deliveryData?.firstName || "N/A"} ${deliveryData?.lastName || ""}</p>
+        <p><strong>Email:</strong> ${customerEmail}</p>
+        <p><strong>Phone:</strong> ${deliveryData?.contact || "N/A"}</p>
+        <p><strong>Address:</strong> ${deliveryData?.houseNumber || ""}, ${deliveryData?.landmark || ""}, 
+          ${deliveryData?.city || ""}, ${deliveryData?.state || ""}, ${deliveryData?.pincode || ""}, ${deliveryData?.country || ""}</p>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+          <thead>
+            <tr style="background-color: #f5f5f5;">
+              <th style="border: 1px solid #ccc; padding: 8px;">Product</th>
+              <th style="border: 1px solid #ccc; padding: 8px;">Size</th>
+              <th style="border: 1px solid #ccc; padding: 8px;">Thickness</th>
+              <th style="border: 1px solid #ccc; padding: 8px;">Qty</th>
+              <th style="border: 1px solid #ccc; padding: 8px;">Sqft</th>
+              <th style="border: 1px solid #ccc; padding: 8px;">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              cartItems.map(item => {
+                const sqft = item.sqftPerUnit ? (item.quantity * item.sqftPerUnit).toFixed(2) : "N/A";
+                const price = item.price && item.quantity && item.sqftPerUnit
+                  ? `₹${(item.price * item.quantity * item.sqftPerUnit).toLocaleString()}`
+                  : "₹N/A";
+                return `
+                  <tr>
+                    <td style="border: 1px solid #ccc; padding: 8px;">${item.name || "N/A"}</td>
+                    <td style="border: 1px solid #ccc; padding: 8px;">${item.selectedSize || "N/A"}</td>
+                    <td style="border: 1px solid #ccc; padding: 8px;">${item.selectedThickness || "N/A"}</td>
+                    <td style="border: 1px solid #ccc; padding: 8px;">${item.quantity || "N/A"}</td>
+                    <td style="border: 1px solid #ccc; padding: 8px;">${sqft}</td>
+                    <td style="border: 1px solid #ccc; padding: 8px;">${price}</td>
+                  </tr>`;
+              }).join("")
+            }
+          </tbody>
+        </table>
+
+        <p style="margin-top: 20px;"><strong>Subtotal:</strong> ₹${subtotal.toLocaleString()}</p>
+        <p><strong>Delivery:</strong> ₹${delivery}</p>
+        <p><strong>Total:</strong> ₹${total.toLocaleString()}</p>
+        <p style="margin-top: 15px;">📞 Support: +91-9998333033</p>
+      </div>
+    `
+  };
+
   try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    const mailOptions = {
-      from: `"Your Store" <${process.env.EMAIL_USER}>`,
-      to,
-      subject: "🎉 Order Placed Successfully!",
-      html: `
-        <h2>Thank you for your order!</h2>
-        <p>Your order has been placed successfully. We’ll update you once it’s shipped.</p>
-        <p>Need help? Contact us at <strong>+91-9998333033</strong>.</p>
-      `,
-    };
-
-    await transporter.sendMail(mailOptions);
-    res.status(200).json({ message: "Email sent successfully." });
+    await transporter.sendMail(customerMail);
+    await transporter.sendMail(adminMail);
+    res.status(200).json({ success: true, message: "Emails sent" });
   } catch (error) {
-    console.error("Error sending email:", error);
-    res.status(500).json({ message: "Failed to send email." });
+    console.error("❌ Email error:", error.message);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// === Start the Server ===
+
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
-
-

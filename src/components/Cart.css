@@ -122,10 +122,44 @@
   .column-cart{
     display: flex;
     justify-content: space-between;
-    max-width: 1400px;
+    padding-top: 20px;
+    padding-left: 40px;
+    padding-right: 40px;
     margin: 0 auto;
+    background-color: #fdf6ec;
   }
   .cart-column-order{
 margin-top: 50px;
+  }
+  
+  .sample-label {
+    display: inline-block;
+    padding: 4px 8px;
+    background-color: #f6ffed;
+    color: #52c41a;
+    border: 1px solid #b7eb8f;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 4px 0;
+  }
+  
+  .box-label {
+    display: inline-block;
+    padding: 4px 8px;
+    background-color: #e6f7ff;
+    color: #1890ff;
+    border: 1px solid #91d5ff;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 4px 0;
+  }
+  
+  .price-note {
+    font-size: 10px;
+    color: #666;
+    font-style: italic;
+    margin-top: 2px;
   }
   

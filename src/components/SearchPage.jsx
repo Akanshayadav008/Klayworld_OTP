@@ -3,6 +3,9 @@ import "./style.css"; // make sure your CSS is imported
 import Header from "./Header";
 import { db } from "./../../firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
+import Footer from "./Footer";
+
+
 
 
 const ProductSearch = () => {
@@ -14,8 +17,12 @@ const ProductSearch = () => {
     const collectionName = "products";
 
 
+
+
     // (Removed synonymsCache since synonyms functionality has been removed)
     // const synonymsCache = useRef({});
+
+
 
 
     const [selectedCategories, setSelectedCategories] = useState(new Set());
@@ -29,12 +36,18 @@ const ProductSearch = () => {
     const [loading, setLoading] = useState(false);
 
 
+
+
     // New state: whether to show the "No results" message after 10 sec.
     const [showNoResultsDelayed, setShowNoResultsDelayed] = useState(false);
 
 
+
+
     // For showing/hiding the category dropdown
     const [categoryDropdownVisible, setCategoryDropdownVisible] = useState(false);
+
+
 
 
     // Options for filters (populated from products)
@@ -42,9 +55,13 @@ const ProductSearch = () => {
     const [finishOptions, setFinishOptions] = useState([]);
 
 
+
+
     // For size filtering: maintain the size sub-category and size options
     const [sizeCategories, setSizeCategories] = useState([]);
     const [sizeOptions, setSizeOptions] = useState([]);
+
+
 
 
     // Define static size filters
@@ -94,6 +111,8 @@ const ProductSearch = () => {
     };
 
 
+
+
     // Helper: sort sizes by area (width * height)
     const sortByArea = (sizesArray) => {
         return sizesArray.slice().sort((a, b) => {
@@ -104,6 +123,8 @@ const ProductSearch = () => {
     };
 
 
+
+
     // Create sorted arrays for each size category and set default options
     const sizeFiltersSorted = {
         Standard: sortByArea(sizeFilters.Standard),
@@ -111,6 +132,8 @@ const ProductSearch = () => {
         Subway: sortByArea(sizeFilters.Subway),
         Others: sortByArea(sizeFilters.Others),
     };
+
+
 
 
     // On mount, set the size sub-categories and default size options (all sizes)
@@ -129,6 +152,8 @@ const ProductSearch = () => {
         });
         setSizeOptions(allSizesArray);
     }, []);
+
+
 
 
     // Fetch products from Firestore on component mount
@@ -156,8 +181,12 @@ const ProductSearch = () => {
         };
 
 
+
+
         fetchAllProducts();
     }, [collectionName]);
+
+
 
 
     // Update category and finish options when products change
@@ -182,6 +211,8 @@ const ProductSearch = () => {
     }, [products]);
 
 
+
+
     // Delay showing the "No results." message after 10 seconds if filteredProducts is still empty
     useEffect(() => {
         if (activeQuery !== "") {
@@ -198,6 +229,8 @@ const ProductSearch = () => {
     }, [activeQuery, filteredProducts]);
 
 
+
+
     // Utility: Extract keywords from a sentence.
     const extractKeywords = (sentence) => {
         const stopWords = [
@@ -208,6 +241,8 @@ const ProductSearch = () => {
             .split(/\W+/)
             .filter((word) => word && !stopWords.includes(word));
     };
+
+
 
 
     // Utility: Count keyword matches using product attributes.
@@ -224,8 +259,12 @@ const ProductSearch = () => {
         };
 
 
+
+
         for (const keyword of keywords) {
             const regex = new RegExp(`\\b${keyword}\\b`, "i");
+
+
 
 
             if (
@@ -243,12 +282,18 @@ const ProductSearch = () => {
     };
 
 
+
+
     // Filter handlers
+
+
 
 
     const toggleCategoryDropdown = () => {
         setCategoryDropdownVisible(!categoryDropdownVisible);
     };
+
+
 
 
     // Update category filter without triggering an immediate search.
@@ -264,10 +309,14 @@ const ProductSearch = () => {
     };
 
 
+
+
     // Update finish filter.
     const updateFinishFilter = (e) => {
         setSelectedFinish(e.target.value);
     };
+
+
 
 
     // Normalize and update size filter.
@@ -277,9 +326,13 @@ const ProductSearch = () => {
     };
 
 
+
+
     const updateSizeFilter = (e) => {
         setSelectedSize(normalizeSize(e.target.value));
     };
+
+
 
 
     // Reset all filters.
@@ -290,6 +343,8 @@ const ProductSearch = () => {
         setMinPrice(0);
         setMaxPrice(Infinity);
     };
+
+
 
 
     // Modified search function with synchronous keyword matching.
@@ -305,7 +360,11 @@ const ProductSearch = () => {
         setLoading(true);
 
 
+
+
         const keywords = extractKeywords(searchText);
+
+
 
 
         // Process all products synchronously.
@@ -313,6 +372,8 @@ const ProductSearch = () => {
             const matchCount = countKeywordMatches(product, keywords);
             return matchCount > 0 ? { product, matchCount } : null;
         });
+
+
 
 
         const scoredProducts = scoredProductsResults.filter((item) => item !== null);
@@ -324,9 +385,13 @@ const ProductSearch = () => {
         });
 
 
+
+
         const topMatches = scoredProducts
             .filter((item) => item.matchCount === maxMatchCount)
             .map((item) => item.product);
+
+
 
 
         if (topMatches.length === 0) {
@@ -337,6 +402,8 @@ const ProductSearch = () => {
         }
 
 
+
+
         // Apply additional filters: category, finish, size, and price.
         const filteredByCategory = topMatches.filter((product) =>
             selectedCategories.size === 0 ||
@@ -344,6 +411,8 @@ const ProductSearch = () => {
                 product.category?.includes(category)
             )
         );
+
+
 
 
         const filteredByFinish = filteredByCategory.filter((product) => {
@@ -356,6 +425,8 @@ const ProductSearch = () => {
             }
             return productFinishes.includes(selectedFinish.toLowerCase());
         });
+
+
 
 
         const filteredBySize = filteredByFinish.filter((product) => {
@@ -375,9 +446,13 @@ const ProductSearch = () => {
         });
 
 
+
+
         const filteredByPrice = filteredBySize.filter(
             (product) => product.price >= minPrice && product.price <= maxPrice
         );
+
+
 
 
         setFilteredProducts(filteredByPrice);
@@ -386,12 +461,16 @@ const ProductSearch = () => {
     };
 
 
+
+
     // useEffect to re-run the search whenever non-price filters change (if a query has already been made)
     useEffect(() => {
         if (activeQuery) {
             searchProducts();
         }
     }, [selectedCategories, selectedFinish, selectedSize]);
+
+
 
 
     // Pagination calculations
@@ -403,9 +482,13 @@ const ProductSearch = () => {
     );
 
 
+
+
     const prevPage = () => {
         if (currentPage > 1) setCurrentPage(currentPage - 1);
     };
+
+
 
 
     const nextPage = () => {
@@ -414,14 +497,22 @@ const ProductSearch = () => {
     };
 
 
+
+
     // Show pagination only if a search has been performed and there are enough results.
     const showPagination =
         activeQuery !== "" && filteredProducts.length > productsPerPage;
 
 
+
+
     return (
-        <div>
-            <Header />
+        <>
+        <Header />
+        <div className="container-search">
+         
+
+
 
 
             <div className="containerbox">
@@ -459,6 +550,8 @@ const ProductSearch = () => {
                     </div>
 
 
+
+
                     {/* Category Filter */}
                     <div id="categoryFilterContainer">
             <label htmlFor="categoryDropdown">Filter:</label>
@@ -483,6 +576,8 @@ const ProductSearch = () => {
           </div>
 
 
+
+
                     {/* Finish Filter */}
                     <div id="finishFilterContainer">
                         <select
@@ -498,6 +593,8 @@ const ProductSearch = () => {
                             ))}
                         </select>
                     </div>
+
+
 
 
                     {/* Size Filter */}
@@ -544,6 +641,8 @@ const ProductSearch = () => {
                     </div>
 
 
+
+
                     {/* Price Filter */}
                     <div id="priceFilterContainer">
                         <input
@@ -571,7 +670,11 @@ const ProductSearch = () => {
                 </div>
 
 
+
+
                 <div className="vertical-line"></div>
+
+
 
 
                 {/* Right Column – Results */}
@@ -586,6 +689,8 @@ const ProductSearch = () => {
                     >
                         <h2>Search Results</h2>
                     </div>
+
+
 
 
                     {activeQuery === "" ? (
@@ -629,6 +734,8 @@ const ProductSearch = () => {
                                         </div>
 
 
+
+
                                         <strong
                                             className="product-name"
                                             onClick={() =>
@@ -637,6 +744,8 @@ const ProductSearch = () => {
                                         >
                                             {product.name || "N/A"}
                                         </strong>
+
+
 
 
                                         <div className="icon-container">
@@ -675,6 +784,8 @@ const ProductSearch = () => {
                     )}
 
 
+
+
                     {/* Pagination buttons always at the bottom */}
                     {showPagination && (
                         <div className="pagination" style={{ marginTop: "auto", paddingTop: "10px" }}>
@@ -697,11 +808,22 @@ const ProductSearch = () => {
                 </div>
             </div>
         </div>
+
+        <Footer/>
+        </>
     );
 };
 
 
+
+
 export default ProductSearch;
+
+
+
+
+
+
 
 
 

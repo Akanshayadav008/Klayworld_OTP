@@ -25,8 +25,8 @@ const OrderSummary = () => {
         </div>
         <hr />
         <div className="summary-row total">
-          <strong>Total Amount</strong>
-          <strong>₹{total.toLocaleString()}</strong>
+          Total Amount
+         ₹{total.toLocaleString()}
         </div>
         <button className="checkout-btn">Checkout</button>
       </div>

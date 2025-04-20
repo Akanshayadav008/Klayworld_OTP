@@ -5,65 +5,113 @@
     align-items: center;
     background-color: #00030e;
     color: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 80%;
-    margin: 40px auto;
+    padding: 2vh 2vw;
+    border-radius: 1vh;
+    width: 80vw;
+    margin: 4vh auto;
+    box-sizing: border-box;
 }
 
 .booking-text {
-    font-size: 18px;
+    font-size: 1.2vw;
+    flex: 1;
+    margin-right: 2vw;
+    line-height: 1.5;
 }
 
 .booking-button {
     background-color: #ffcc00;
     color: black;
     font-weight: bold;
-    padding: 10px 20px;
+    padding: 1.5vh 2vw;
     border: none;
-    border-radius: 5px;
+    border-radius: 0.5vh;
     cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.3s ease;
+    font-size: 1.1vw;
 }
 
 .booking-button:hover {
     background-color: #e6b800;
 }
 
+/* Responsive styles */
+@media screen and (max-width: 768px) {
+    .booking-container {
+        flex-direction: column;
+        text-align: center;
+        padding: 3vh 2vw;
+        width: 90vw;
+    }
+
+    .booking-text {
+        font-size: 2.5vw;
+        margin-right: 0;
+        margin-bottom: 2vh;
+    }
+
+    .booking-button {
+        width: 100%;
+        max-width: 30vw;
+        font-size: 2vw;
+        padding: 1.5vh 3vw;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .booking-container {
+        padding: 2vh 2vw;
+        width: 95vw;
+    }
+
+    .booking-text {
+        font-size: 3vw;
+    }
+
+    .booking-button {
+        padding: 1.5vh 4vw;
+        font-size: 2.5vw;
+        max-width: 40vw;
+    }
+}
 
 /* BlogSection.css */
 
 .home-container {
     text-align: center;
-    padding: 40px;
+    padding: 4vh 4vw;
     background:none;
 }
 
 .home-title {
-    font-size: 24px;
+    font-size: 2vw;
     font-weight: bold;
     text-transform: uppercase;
-    margin-bottom: 20px;
+    margin-bottom: 2vh;
     position: relative;
 }
 
 .home-title::after {
     content: "";
     display: block;
-    width: 50px;
-    height: 2px;
+    width: 3vw;
+    height: 0.2vh;
     background-color: black;
-    margin: 10px auto;
+    margin: 1vh auto;
 }
 
 .home-grid {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2vw;
+    padding: 2vh 4vw;
+    justify-items: center;
 }
 
 .home-card {
-    width: 400px;
+    width: 100%;
+    max-width: 30vw;
     position: relative;
     overflow: hidden;
 }
@@ -78,15 +126,36 @@
 }
 
 .view-more-button {
-    margin-top: 20px;
+    margin-top: 2vh;
     background-color: #020924;
     color: white;
     border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
+    padding: 1.5vh 2vw;
+    border-radius: 0.5vh;
     cursor: pointer;
+    font-size: 1.1vw;
 }
 
 .view-more-button:hover {
     background-color: #001f6b;
+}
+
+@media screen and (max-width: 1024px) {
+    .home-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .home-card {
+        max-width: 45vw;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .home-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .home-card {
+        max-width: 80vw;
+    }
 }

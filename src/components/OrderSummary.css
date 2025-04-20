@@ -22,13 +22,14 @@
   .summary-row {
     display: flex;
     justify-content: space-between;
+    font-family: poppins;
     margin-bottom: 0.6rem;
     font-size: 0.95rem;
   }
   
   .summary-row.total {
     font-weight: 600;
-    margin-top: 0.8rem;
+    margin-top: 0.98rem;
   }
   
   .checkout-btn {

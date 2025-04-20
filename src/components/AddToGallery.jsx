@@ -5,9 +5,9 @@ import Header from './Header';
 import Footer from './Footer';
 import DeliveryAddress from './DeliveryAddress';
 import BillingAddressForm from './BillingAddressForm';
-import emailjs from 'emailjs-com';
+import { useNavigate } from 'react-router-dom';
 
-const OrderSummary = ({ subtotal }) => {
+const OrderSummary = ({ subtotal, onCheckout }) => {
   const delivery = 20;
   const discount = 0;
   const total = subtotal + delivery - discount;
@@ -31,16 +31,17 @@ const OrderSummary = ({ subtotal }) => {
         <hr />
         <div className="summary-row total">
           <strong>Total Amount</strong>
-          <strong>₹{total.toLocaleString()}</strong>
+          ₹{total.toLocaleString()}
         </div>
-        <button className="checkout-btn">Checkout</button>
+        <button className="checkout-btn" onClick={onCheckout}>Checkout</button>
       </div>
 
       <div className="order-note-box">
         <h4>Note</h4>
         <ul>
-          <li><strong>30%</strong> advance payment is required before purchasing any product, with the remaining <strong>70%</strong> payable upon delivery.</li>
-          <li>For sample bookings, full payment will be required.</li>
+          <li><strong>30%</strong> advance payment is required before purchasing any product.</li>
+          <li>Remaining <strong>70%</strong> is payable upon delivery.</li>
+          <li>For sample bookings, full payment is required.</li>
         </ul>
       </div>
     </div>
@@ -53,99 +54,97 @@ const AddToGallery = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [showRazorpay, setShowRazorpay] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const storedGallery = JSON.parse(localStorage.getItem("galleryCart")) || [];
-    const enrichedGallery = storedGallery.map(item => ({
-      ...item,
-      quantity: item.quantity || 1,
-      price: Number(item.price) || 250
-    }));
-    setCartItems(enrichedGallery);
+    const uniqueMap = new Map();
+
+    storedGallery.forEach(item => {
+      const price = Number(item.price.replace(/[^0-9.-]+/g, "")) || 0;
+      let sqftPerUnit = 1;
+
+      if (item.selectedSize) {
+        const sizeStr = item.selectedSize.toLowerCase().replace(/\s/g, '');
+        const mmMatch = sizeStr.match(/([\d.]+)x([\d.]+)mm/);
+        const ftMatch = sizeStr.match(/^([\d.]+)x([\d.]+)$/);
+
+        if (mmMatch) {
+          const widthFt = parseFloat(mmMatch[1]) * 0.00328084;
+          const heightFt = parseFloat(mmMatch[2]) * 0.00328084;
+          sqftPerUnit = parseFloat((widthFt * heightFt).toFixed(2));
+        } else if (ftMatch) {
+          const width = parseFloat(ftMatch[1]);
+          const height = parseFloat(ftMatch[2]);
+          sqftPerUnit = parseFloat(((width * height)/92903.04).toFixed(2));
+        }
+      }
+
+      const key = `${item.name}-${item.selectedSize}-${item.selectedThickness}-${item.sample ? 'sample' : 'box'}`;
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, {
+          ...item,
+          price,
+          sqftPerUnit,
+          quantity: 1
+        });
+      } else {
+        const existingItem = uniqueMap.get(key);
+        uniqueMap.set(key, {
+          ...existingItem,
+          quantity: existingItem.quantity + 1
+        });
+      }
+    });
+
+    setCartItems(Array.from(uniqueMap.values()));
   }, []);
 
-  const getFirstImage = (images) => {
-    if (Array.isArray(images)) return images[0];
-    return images;
-  };
+  const getFirstImage = (images) => Array.isArray(images) ? images[0] : images;
+  const renderArray = (value) => Array.isArray(value) ? value.join(', ') : value || 'N/A';
 
-  const renderArray = (value) => {
-    if (Array.isArray(value)) return value.join(', ');
-    return value || 'N/A';
-  };
-
-  const handleAddAddressClick = () => {
-    setShowAddressForm(true);
-  };
-
-  const handleSendOtpClick = () => {
-    setOtpSent(true);
-  };
-
-  const formatCartItems = () => {
-    return cartItems.map(item => {
-      const name = item.name || 'Unnamed';
-      const size = item.selectedSize || 'N/A';
-      const thickness = item.selectedThickness || 'N/A';
-      return `${name} (Size: ${size}, Thickness: ${thickness})`;
-    }).join('\n');
-  };
+  const handleAddAddressClick = () => setShowAddressForm(true);
 
   const handleQuantityChange = (index, delta) => {
-    setCartItems(prevItems => {
-      return prevItems.map((item, i) => {
+    setCartItems(prevItems =>
+      prevItems.map((item, i) => {
         if (i === index) {
           const newQty = item.quantity + delta;
+          if (item.sample) {
+            return { ...item, quantity: Math.min(Math.max(newQty, 1), 5) };
+          }
           return { ...item, quantity: newQty > 0 ? newQty : 1 };
         }
         return item;
-      });
-    });
-  };
-
-  const handleSendCartEmail = (customerEmail) => {
-    const cartData = formatCartItems();
-
-    if (!customerEmail) {
-      alert('Customer email is missing. Cannot send mail.');
-      return;
-    }
-
-    const confirmation = window.confirm(`Send cart details to ${customerEmail}?`);
-    if (!confirmation) return;
-
-    emailjs.send(
-      'service_t16t4rm',
-      'template_wrw99ho',
-      {
-        email: customerEmail,
-        order_id: cartData
-      },
-      'GhP9dcQ5K80SP8IVO'
-    )
-    .then(response => {
-      console.log('Email sent successfully:', response);
-      alert('Email sent successfully to ' + customerEmail);
-      setShowRazorpay(true);
-    })
-    .catch(error => {
-      console.error('Failed to send email:', error);
-      alert('Email sending failed. Error details: ' + error.text);
-    });
+      })
+    );
   };
 
   const handlePayment = () => {
     alert("Razorpay payment initiated!");
+    // ✅ Save data for OrderSuccess
+    localStorage.setItem("galleryCart", JSON.stringify(cartItems));
+    localStorage.setItem("subtotal", subtotal);
     setOrderPlaced(true);
+    navigate("/order-success");
   };
 
-  const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const subtotal = cartItems.reduce((acc, item) => {
+    const itemSqft = item.quantity * item.sqftPerUnit;
+    return acc + (item.price * itemSqft);
+  }, 0);
+
+  const handleCheckout = () => {
+    if (!showAddressForm && !otpSent) {
+      setShowAddressForm(true);
+    }
+  };
 
   if (orderPlaced) {
     return (
       <div className="order-success">
         <h2>Order Placed Successfully!</h2>
-        <p>A confirmation email has been sent to your registered email address.</p>
+        <p>A confirmation email will be sent to your registered email address.</p>
       </div>
     );
   }
@@ -153,19 +152,18 @@ const AddToGallery = () => {
   return (
     <>
       <Header />
-
       <div className='column-cart'>
         <div className="simple-cart-wrapper">
           <div className="simple-header">
-            <ArrowLeft size={20} className="back-arrow" />
+            <ArrowLeft size={20} className="back-arrow" style={{ cursor: 'pointer' }} onClick={() => navigate(-1)} />
             <h2>Shopping Cart</h2>
-            <button className="add-address-btn" onClick={handleAddAddressClick}>
-              Add Address
-            </button>
+            {!showAddressForm && !otpSent && (
+              <button className="add-address-btn" onClick={handleAddAddressClick}>Add Address</button>
+            )}
           </div>
 
           {otpSent ? (
-            <BillingAddressForm onCheckout={handleSendCartEmail} />
+            <BillingAddressForm onCheckout={() => setShowRazorpay(true)} />
           ) : showAddressForm ? (
             <DeliveryAddress />
           ) : (
@@ -173,40 +171,64 @@ const AddToGallery = () => {
               {cartItems.length === 0 ? (
                 <p>No items in the cart.</p>
               ) : (
-                cartItems.map((item, idx) => (
-                  <div className="simple-cart-item" key={idx}>
-                    <div className="simple-item-info">
-                      <img src={getFirstImage(item.tileImage)} alt={item.name} className="simple-item-img" />
-                      <div>
-                        <div className="simple-item-title">{item.name}</div>
-                        {item.sample && <div className="simple-item-sub">Sample</div>}
-                        <div className="simple-item-desc">Size: {item.selectedSize || 'N/A'}</div>
-                        <div className="simple-item-desc">Thickness: {item.selectedThickness || 'N/A'}</div>
-                        <div className="simple-item-desc">Category: {renderArray(item.space)}</div>
-                      </div>
-                    </div>
+                cartItems.map((item, idx) => {
+                  const itemSqft = item.quantity * item.sqftPerUnit;
+                  const tilesPerBox = 5;
+                  const totalPrice = item.sample
+                    ? 200 * item.quantity
+                    : item.price * itemSqft * tilesPerBox;
 
-                    <div className="simple-item-actions">
-                      <div className="simple-item-price">₹{item.price * item.quantity}</div>
-                      <div className="simple-qty-ctrl">
-                        <button onClick={() => handleQuantityChange(idx, -1)}><Minus size={14} /></button>
-                        <span>{item.quantity}</span>
-                        <button onClick={() => handleQuantityChange(idx, 1)}><Plus size={14} /></button>
+                  return (
+                    <div className="simple-cart-item" key={idx}>
+                      <div className="simple-item-info">
+                        <img src={getFirstImage(item.tileImage)} alt={item.name} className="simple-item-img" />
+                        <div>
+                          <div className="simple-item-title">{item.name}</div>
+                          {item.sample ? (
+                            <div className="sample-label">Sample</div>
+                          ) : (
+                            <div className="box-label">Box</div>
+                          )}
+                          <div className="simple-item-desc">Size: {item.selectedSize}</div>
+                          <div className="simple-item-desc">Thickness: {item.selectedThickness}</div>
+                          <div className="simple-item-desc">Category: {renderArray(item.space)}</div>
+                          {!item.sample && (
+                            <>
+                              <div className="simple-item-desc">Sqft: {itemSqft} sqft</div>
+                              <div className="simple-item-desc">Tiles per box: {tilesPerBox}</div>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="simple-icons">
-                        <Heart size={16} />
-                        <Trash2 size={16} />
+                      <div className="simple-item-actions">
+                        <div className="simple-item-price">
+                          ₹{totalPrice.toLocaleString()}
+                          {item.sample ? (
+                            <div className="price-note">(₹200 × {item.quantity} samples)</div>
+                          ) : (
+                            <div className="price-note">(₹{item.price} × {itemSqft} sqft × {tilesPerBox})</div>
+                          )}
+                        </div>
+                        <div className="simple-qty-ctrl">
+                          <button onClick={() => handleQuantityChange(idx, -1)}><Minus size={14} /></button>
+                          <span>{item.quantity}</span>
+                          <button onClick={() => handleQuantityChange(idx, 1)}><Plus size={14} /></button>
+                        </div>
+                        <div className="simple-icons">
+                          <Heart size={16} />
+                          <Trash2 size={16} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           )}
         </div>
 
         <div className='cart-column-order'>
-          <OrderSummary subtotal={subtotal} />
+          <OrderSummary subtotal={subtotal} onCheckout={handleCheckout} />
         </div>
       </div>
 

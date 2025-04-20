@@ -428,7 +428,7 @@ const ProductDetails = () => {
             </button>
 
 
-            <button onClick={handleAddToGallery} id="AddToCart">Add to Gallery</button>
+            <button onClick={handleAddToGallery} id="AddToCart">Add to Cart</button>
           </div>
           <button id="buyNow" style={{ display: "none" }} >
             Buy Now - <span id="selectedPrice">{currentPrice}</span>
