@@ -30,7 +30,6 @@ const BlogCard = () => {
 
   return (
     <>
-      <Header />
       <div className="blog-section">
         {blogPosts.map((post, index) => (
           <div key={index} className="blog-card">

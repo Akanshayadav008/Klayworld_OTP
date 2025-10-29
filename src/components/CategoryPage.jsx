@@ -73,7 +73,6 @@ const CategoryPage = () => {
 
   return (
     <>
-      <Header />
       <div className="category-section">
         <h1>{formattedCategory} Finishes</h1>
         {finishes.length === 0 ? (

@@ -7,7 +7,6 @@ import MapComponent from "./MyMapComponent";
 const ContactForm = () => {
   return (
     <>
-    <Header />
 
    <MapComponent />
 

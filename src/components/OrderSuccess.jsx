@@ -42,7 +42,6 @@ const OrderSuccess = () => {
 
   return (
     <>
-      <Header />
       <div className="os-container">
         <div className="os-box">
           <div className="os-success">

@@ -1,20 +1,46 @@
 import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
-import { faPhone, faMagnifyingGlass, } from "@fortawesome/free-solid-svg-icons";
-import { useNavigate } from "react-router-dom";
+import {
+  faCartShopping,
+  faPhone,
+  faMagnifyingGlass,
+} from "@fortawesome/free-solid-svg-icons";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import "../components/Header.css";
-
 
 function Header() {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation(); // ✅ Detect current page
 
-  // ✅ Handle click event for dropdown items
   const handleFinishClick = (finish) => {
     navigate(`/productsearch?&finish=${finish.toLowerCase()}`);
   };
 
+  // ✅ Define routes where only minimal header is shown
+  const minimalHeaderRoutes = ["/login", "/signup"];
+
+  // ✅ Check if current route matches one of those
+  const isMinimalHeader = minimalHeaderRoutes.includes(location.pathname);
+
+  // ✅ Minimal Header (for login/signup)
+  if (isMinimalHeader) {
+    return (
+      <header className="main-header minimal-header">
+        <div className="container2">
+          <div className="logo">
+            <img src="/images/logo.png" alt="KLAY Logo" />
+          </div>
+          <div className="contact2" >
+            <FontAwesomeIcon icon={faPhone} />
+            <p>+91 9871400020</p>
+          </div>
+        </div>
+      </header>
+    );
+  }
+
+  // ✅ Full Header (for all other pages)
   return (
     <header className="main-header">
       <div className="container">
@@ -38,7 +64,18 @@ function Header() {
               <a href="#">Products</a>
               {dropdownVisible && (
                 <ul className="dropdown-menu">
-                  {["Matt", "Metallic",  "Wooden", "Textured", "R-11Anti-Skid", "Mosaics", "Liner", "High Gloss", "Blast", "Concrete"].map((finish) => (
+                  {[
+                    "Matt",
+                    "Metallic",
+                    "Wooden",
+                    "Textured",
+                    "R-11Anti-Skid",
+                    "Mosaics",
+                    "Liner",
+                    "High Gloss",
+                    "Blast",
+                    "Concrete",
+                  ].map((finish) => (
                     <li key={finish}>
                       <a onClick={() => handleFinishClick(finish)}>{finish}</a>
                     </li>
@@ -60,9 +97,19 @@ function Header() {
             <FontAwesomeIcon icon={faMagnifyingGlass} />
           </button>
         </div>
+
         <a href="/AddToGallery" className="add-to-gallery-button">
-          <FontAwesomeIcon icon={faCartShopping} style={{ marginRight: '5px' }} />
+          <FontAwesomeIcon icon={faCartShopping} style={{ marginRight: "5px" }} />
         </a>
+
+        <div>
+          <span>
+            <Link to="/login"><span>Login</span></Link>
+          </span>
+          <span>
+            <Link to="/signup"><span>Signup</span></Link>
+          </span>
+        </div>
       </div>
     </header>
   );

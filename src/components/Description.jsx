@@ -287,7 +287,6 @@ const ProductDetails = () => {
 
   return (
     <>
-      <Header />
       <div className="product-container">
         {/* Left: Main Product Image */}
         <div className="product-gallery">

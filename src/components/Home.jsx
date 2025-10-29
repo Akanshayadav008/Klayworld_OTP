@@ -21,7 +21,6 @@ const HeaderDesign = () => {
 
   return (
     <>
-      <Header />
 
       <div className="container2">
         <div className="content2">

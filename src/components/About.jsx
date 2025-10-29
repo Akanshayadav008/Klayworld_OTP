@@ -23,7 +23,6 @@ function About() {
 
   return (
     <>
-      <Header />
       <div className='about'>
         <h3 className="who">Who Are We</h3>
         <h1 className="welcome">Welcome to Klay</h1>

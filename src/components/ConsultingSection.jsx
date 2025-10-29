@@ -33,7 +33,6 @@ const ConsultingSection = () => {
 
   return (
     <>
-      <Header />
       <div className="consulting-container">
         <h2 className="consulting-title">Book a Session with our Consulting Team</h2>
 

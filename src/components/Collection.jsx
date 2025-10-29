@@ -8,7 +8,6 @@ import Footer from "./Footer";
 const Collection = () => {
   return (
     <>
-      <Header />
       <h1 className="heading">Our Collection</h1>
       <ImageSection />
       <Footer />

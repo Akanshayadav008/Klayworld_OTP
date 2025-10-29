@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./style.css"; // make sure your CSS is imported
 import Header from "./Header";
-import { db } from "./../../firebaseConfig";
+import { db } from "./../../firebaseConfig.jsx";
 import { collection, getDocs } from "firebase/firestore";
 import Footer from "./Footer";
 
@@ -167,7 +167,7 @@ const ProductSearch = () => {
                         ...data,
                         finish:
                             typeof data.finish === "string" &&
-                            data.finish.toLowerCase() === "high gloss"
+                                data.finish.toLowerCase() === "high gloss"
                                 ? "Marble"
                                 : data.finish,
                     };
@@ -508,308 +508,307 @@ const ProductSearch = () => {
 
     return (
         <>
-        <Header />
-        <div className="container-search">
-         
+            <div className="container-search">
 
 
 
 
-            <div className="containerbox">
-                {/* Left Column – Filters */}
-                <div className="searchinputBox">
-                    <div className="InputHeader">Text Analysis Tool</div>
-                    <div style={{ fontSize: "16px", fontFamily: "Poppins" }}>
-                        Find Your Perfect Tile !
-                    </div>
-                    <div id="searchBar">
-                        <input
-                            type="text"
-                            id="searchInput"
-                            placeholder="Search for products..."
-                            value={searchText}
-                            onChange={(e) => {
-                                setSearchText(e.target.value);
-                                if (!e.target.value.trim()) {
-                                    setActiveQuery("");
-                                    setFilteredProducts([]);
-                                    setCurrentPage(1);
-                                }
-                            }}
-                        />
-                        {/* On click, the search button calls both resetFilters() and searchProducts() */}
-                        <button
-                            className="searchbutton"
-                            onClick={() => {
-                                resetFilters();
-                                searchProducts();
-                            }}
-                        >
-                            Search
-                        </button>
-                    </div>
 
-
-
-
-                    {/* Category Filter */}
-                    <div id="categoryFilterContainer">
-            <label htmlFor="categoryDropdown">Filter:</label>
-            <div id="toggleCategoryDropdown" onClick={toggleCategoryDropdown}>
-              Select Space
-            </div>
-            {categoryDropdownVisible && (
-              <div id="categoryDropdown">
-                {categoryOptions.map((category) => (
-                  <div key={category} className="category-option">
-                    <input
-                      type="checkbox"
-                      value={category}
-                      onChange={updateCategoryFilter}
-                      checked={selectedCategories.has(category)}
-                    />
-                    <label>{category}</label>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-
-
-
-                    {/* Finish Filter */}
-                    <div id="finishFilterContainer">
-                        <select
-                            id="finishDropdown"
-                            value={selectedFinish}
-                            onChange={updateFinishFilter}
-                        >
-                            <option value="">All Finish</option>
-                            {finishOptions.map((finish) => (
-                                <option key={finish} value={finish}>
-                                    {finish}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-
-
-
-                    {/* Size Filter */}
-                    <div id="sizeFilterContainer">
-                        <select
-                            id="subFilterDropdown"
-                            onChange={(e) => {
-                                const selectedCat = e.target.value;
-                                if (selectedCat && sizeFiltersSorted[selectedCat]) {
-                                    setSizeOptions(sizeFiltersSorted[selectedCat]);
-                                } else {
-                                    const allSizesSet = new Set();
-                                    Object.values(sizeFiltersSorted).forEach((arr) =>
-                                        arr.forEach((size) => allSizesSet.add(size))
-                                    );
-                                    const allSizesArray = Array.from(allSizesSet).sort((a, b) => {
-                                        const [w1, h1] = a.split("x").map(Number);
-                                        const [w2, h2] = b.split("x").map(Number);
-                                        return w1 * h1 - w2 * h2;
-                                    });
-                                    setSizeOptions(allSizesArray);
-                                }
-                            }}
-                        >
-                            <option value="">Sizes Categories</option>
-                            {sizeCategories.map((cat) => (
-                                <option key={cat} value={cat}>
-                                    {cat}
-                                </option>
-                            ))}
-                        </select>
-                        <select
-                            id="sizeDropdown"
-                            value={selectedSize}
-                            onChange={updateSizeFilter}
-                        >
-                            <option value="">All Sizes</option>
-                            {sizeOptions.map((size) => (
-                                <option key={size} value={size}>
-                                    {size}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-
-
-
-                    {/* Price Filter */}
-                    <div id="priceFilterContainer">
-                        <input
-                            type="number"
-                            id="minPriceInput"
-                            placeholder="Min Price"
-                            value={minPrice === 0 ? "" : minPrice}
-                            onChange={(e) =>
-                                setMinPrice(parseFloat(e.target.value) || 0)
-                            }
-                        />
-                        <input
-                            type="number"
-                            id="maxPriceInput"
-                            placeholder="Max Price"
-                            value={maxPrice === Infinity ? "" : maxPrice}
-                            onChange={(e) =>
-                                setMaxPrice(parseFloat(e.target.value) || Infinity)
-                            }
-                        />
-                        <button id="applyPriceFilter" onClick={searchProducts}>
-                            Apply
-                        </button>
-                    </div>
-                </div>
-
-
-
-
-                <div className="vertical-line"></div>
-
-
-
-
-                {/* Right Column – Results */}
-                <div className="resultbox" style={{ display: "flex", flexDirection: "column", minHeight: "480px" }}>
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                            gap: "30px",
-                        }}
-                    >
-                        <h2>Search Results</h2>
-                    </div>
-
-
-
-
-                    {activeQuery === "" ? (
-                        <div id="results" style={{ marginTop: "21px", fontSize: "18px" }}>
-                            <p>No results yet. Search by Text to see results here.</p>
+                <div className="containerbox">
+                    {/* Left Column – Filters */}
+                    <div className="searchinputBox">
+                        <div className="InputHeader">Text Analysis Tool</div>
+                        <div style={{ fontSize: "16px", fontFamily: "Poppins" }}>
+                            Find Your Perfect Tile !
                         </div>
-                    ) : (
-                        <>
-                            <div id="results" style={{ marginTop: "21px", fontSize: "18px" }}>
-                                {showNoResultsDelayed && filteredProducts.length === 0 && <p>No results.</p>}
-                            </div>
-                            <div
-                                id="loadingSpinner"
-                                style={{ display: loading ? "block" : "none" }}
+                        <div id="searchBar">
+                            <input
+                                type="text"
+                                id="searchInput"
+                                placeholder="Search for products..."
+                                value={searchText}
+                                onChange={(e) => {
+                                    setSearchText(e.target.value);
+                                    if (!e.target.value.trim()) {
+                                        setActiveQuery("");
+                                        setFilteredProducts([]);
+                                        setCurrentPage(1);
+                                    }
+                                }}
+                            />
+                            {/* On click, the search button calls both resetFilters() and searchProducts() */}
+                            <button
+                                className="searchbutton"
+                                onClick={() => {
+                                    resetFilters();
+                                    searchProducts();
+                                }}
                             >
-                                <img src="loading.gif" alt="Loading..." width="50" />
+                                Search
+                            </button>
+                        </div>
+
+
+
+
+                        {/* Category Filter */}
+                        <div id="categoryFilterContainer">
+                            <label htmlFor="categoryDropdown">Filter:</label>
+                            <div id="toggleCategoryDropdown" onClick={toggleCategoryDropdown}>
+                                Select Space
                             </div>
-                            <div id="productGrid">
-                                {currentProducts.map((product) => (
-                                    <div
-                                        key={product.product_id}
-                                        className="product-card"
-                                        data-product-id={product.product_id}
-                                    >
-                                        <div className="image-container">
-                                            <div className="spinner"></div>
-                                            <img
-                                                src={`https://converter.klayworld.com/convertToWebP?url=${encodeURIComponent(product.tileImage)}`}
-                                                alt={product.name}
-                                                loading="lazy"
-                                                className="product-image"
-                                                onLoad={(e) => {
-                                                    e.target.style.opacity = "1";
-                                                    if (e.target.previousSibling)
-                                                        e.target.previousSibling.remove();
-                                                }}
+                            {categoryDropdownVisible && (
+                                <div id="categoryDropdown">
+                                    {categoryOptions.map((category) => (
+                                        <div key={category} className="category-option">
+                                            <input
+                                                type="checkbox"
+                                                value={category}
+                                                onChange={updateCategoryFilter}
+                                                checked={selectedCategories.has(category)}
+                                            />
+                                            <label>{category}</label>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+
+
+
+                        {/* Finish Filter */}
+                        <div id="finishFilterContainer">
+                            <select
+                                id="finishDropdown"
+                                value={selectedFinish}
+                                onChange={updateFinishFilter}
+                            >
+                                <option value="">All Finish</option>
+                                {finishOptions.map((finish) => (
+                                    <option key={finish} value={finish}>
+                                        {finish}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+
+
+
+                        {/* Size Filter */}
+                        <div id="sizeFilterContainer">
+                            <select
+                                id="subFilterDropdown"
+                                onChange={(e) => {
+                                    const selectedCat = e.target.value;
+                                    if (selectedCat && sizeFiltersSorted[selectedCat]) {
+                                        setSizeOptions(sizeFiltersSorted[selectedCat]);
+                                    } else {
+                                        const allSizesSet = new Set();
+                                        Object.values(sizeFiltersSorted).forEach((arr) =>
+                                            arr.forEach((size) => allSizesSet.add(size))
+                                        );
+                                        const allSizesArray = Array.from(allSizesSet).sort((a, b) => {
+                                            const [w1, h1] = a.split("x").map(Number);
+                                            const [w2, h2] = b.split("x").map(Number);
+                                            return w1 * h1 - w2 * h2;
+                                        });
+                                        setSizeOptions(allSizesArray);
+                                    }
+                                }}
+                            >
+                                <option value="">Sizes Categories</option>
+                                {sizeCategories.map((cat) => (
+                                    <option key={cat} value={cat}>
+                                        {cat}
+                                    </option>
+                                ))}
+                            </select>
+                            <select
+                                id="sizeDropdown"
+                                value={selectedSize}
+                                onChange={updateSizeFilter}
+                            >
+                                <option value="">All Sizes</option>
+                                {sizeOptions.map((size) => (
+                                    <option key={size} value={size}>
+                                        {size}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+
+
+
+                        {/* Price Filter */}
+                        <div id="priceFilterContainer">
+                            <input
+                                type="number"
+                                id="minPriceInput"
+                                placeholder="Min Price"
+                                value={minPrice === 0 ? "" : minPrice}
+                                onChange={(e) =>
+                                    setMinPrice(parseFloat(e.target.value) || 0)
+                                }
+                            />
+                            <input
+                                type="number"
+                                id="maxPriceInput"
+                                placeholder="Max Price"
+                                value={maxPrice === Infinity ? "" : maxPrice}
+                                onChange={(e) =>
+                                    setMaxPrice(parseFloat(e.target.value) || Infinity)
+                                }
+                            />
+                            <button id="applyPriceFilter" onClick={searchProducts}>
+                                Apply
+                            </button>
+                        </div>
+                    </div>
+
+
+
+
+                    <div className="vertical-line"></div>
+
+
+
+
+                    {/* Right Column – Results */}
+                    <div className="resultbox" style={{ display: "flex", flexDirection: "column", minHeight: "480px" }}>
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                gap: "30px",
+                            }}
+                        >
+                            <h2>Search Results</h2>
+                        </div>
+
+
+
+
+                        {activeQuery === "" ? (
+                            <div id="results" style={{ marginTop: "21px", fontSize: "18px" }}>
+                                <p>No results yet. Search by Text to see results here.</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div id="results" style={{ marginTop: "21px", fontSize: "18px" }}>
+                                    {showNoResultsDelayed && filteredProducts.length === 0 && <p>No results.</p>}
+                                </div>
+                                <div
+                                    id="loadingSpinner"
+                                    style={{ display: loading ? "block" : "none" }}
+                                >
+                                    <img src="loading.gif" alt="Loading..." width="50" />
+                                </div>
+                                <div id="productGrid">
+                                    {currentProducts.map((product) => (
+                                        <div
+                                            key={product.product_id}
+                                            className="product-card"
+                                            data-product-id={product.product_id}
+                                        >
+                                            <div className="image-container">
+                                                <div className="spinner"></div>
+                                                <img
+                                                    src={`https://converter.klayworld.com/convertToWebP?url=${encodeURIComponent(product.tileImage)}`}
+                                                    alt={product.name}
+                                                    loading="lazy"
+                                                    className="product-image"
+                                                    onLoad={(e) => {
+                                                        e.target.style.opacity = "1";
+                                                        if (e.target.previousSibling)
+                                                            e.target.previousSibling.remove();
+                                                    }}
+                                                    onClick={() =>
+                                                        (window.location.href = `product-details?id=${product.product_id}`)
+                                                    }
+                                                />
+                                            </div>
+
+
+
+
+                                            <strong
+                                                className="product-name"
                                                 onClick={() =>
                                                     (window.location.href = `product-details?id=${product.product_id}`)
                                                 }
-                                            />
-                                        </div>
+                                            >
+                                                {product.name || "N/A"}
+                                            </strong>
 
 
 
 
-                                        <strong
-                                            className="product-name"
-                                            onClick={() =>
-                                                (window.location.href = `product-details?id=${product.product_id}`)
-                                            }
-                                        >
-                                            {product.name || "N/A"}
-                                        </strong>
-
-
-
-
-                                        <div className="icon-container">
-                                            <div className="icon-wrapper">
-                                                <img
-                                                    src="images/icons/Walls.svg"
-                                                    alt="Wall"
-                                                    loading="lazy"
-                                                    className="icon"
-                                                />
-                                                <span className="icon-label">Wall</span>
-                                            </div>
-                                            <div className="icon-wrapper">
-                                                <img
-                                                    src="images/icons/Highlight.svg"
-                                                    alt="Highlight"
-                                                    loading="lazy"
-                                                    className="icon"
-                                                />
-                                                <span className="icon-label">Highlight</span>
-                                            </div>
-                                            <div className="icon-wrapper">
-                                                <img
-                                                    src="images/icons/Floor.svg"
-                                                    alt="Floor"
-                                                    loading="lazy"
-                                                    className="icon"
-                                                />
-                                                <span className="icon-label">Floor</span>
+                                            <div className="icon-container">
+                                                <div className="icon-wrapper">
+                                                    <img
+                                                        src="images/icons/Walls.svg"
+                                                        alt="Wall"
+                                                        loading="lazy"
+                                                        className="icon"
+                                                    />
+                                                    <span className="icon-label">Wall</span>
+                                                </div>
+                                                <div className="icon-wrapper">
+                                                    <img
+                                                        src="images/icons/Highlight.svg"
+                                                        alt="Highlight"
+                                                        loading="lazy"
+                                                        className="icon"
+                                                    />
+                                                    <span className="icon-label">Highlight</span>
+                                                </div>
+                                                <div className="icon-wrapper">
+                                                    <img
+                                                        src="images/icons/Floor.svg"
+                                                        alt="Floor"
+                                                        loading="lazy"
+                                                        className="icon"
+                                                    />
+                                                    <span className="icon-label">Floor</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
+                            </>
+                        )}
+
+
+
+
+                        {/* Pagination buttons always at the bottom */}
+                        {showPagination && (
+                            <div className="pagination" style={{ marginTop: "auto", paddingTop: "10px" }}>
+                                <button
+                                    id="prevPage"
+                                    onClick={prevPage}
+                                    disabled={currentPage === 1}
+                                >
+                                    Previous
+                                </button>
+                                <button
+                                    id="nextPage"
+                                    onClick={nextPage}
+                                    disabled={currentPage * productsPerPage >= filteredProducts.length}
+                                >
+                                    Next
+                                </button>
                             </div>
-                        </>
-                    )}
-
-
-
-
-                    {/* Pagination buttons always at the bottom */}
-                    {showPagination && (
-                        <div className="pagination" style={{ marginTop: "auto", paddingTop: "10px" }}>
-                            <button
-                                id="prevPage"
-                                onClick={prevPage}
-                                disabled={currentPage === 1}
-                            >
-                                Previous
-                            </button>
-                            <button
-                                id="nextPage"
-                                onClick={nextPage}
-                                disabled={currentPage * productsPerPage >= filteredProducts.length}
-                            >
-                                Next
-                            </button>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <Footer/>
+            <Footer />
         </>
     );
 };

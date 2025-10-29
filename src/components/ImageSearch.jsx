@@ -258,7 +258,6 @@ const ImageSearch = () => {
 
   return (
     <div>
-      <Header />
       <main>
         <div className="contaier">
           {/* Upload Section */}

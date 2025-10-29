@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Header from "./components/Header"; // ✅ Import Header
 import Home from "./components/Home";
 import AdminProductPage from "./components/Admin";
 import ProductSearch from "./components/SearchPage";
@@ -17,31 +18,37 @@ import Search from "./components/ProductSearchPage";
 import AddToGallery from "./components/AddToGallery";
 import DeliveryAddress from "./components/DeliveryAddress";
 import OrderSuccess from "./components/OrderSuccess";
+import SignupWithPhoneOTP from "./components/Signup";
+import LoginWithEmailOrPhone from "./components/login";
 
 function App() {
   return (
     <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/admin" element={<AdminProductPage />} />
-          <Route path="/search" element={<ProductSearch />} />
-          <Route path="/product-details" element={<ProductDetails />} />
-          <Route path="/ImageSearch" element={<ImageSearch />} />
-          <Route path="/Collection" element={<Collection />} />
-          <Route path="/About" element={<About />} />
-          <Route path="/ContactForm" element={<ContactForm />} />
-          <Route path="/ConsultingSection" element={<ConsultingSection />} />
-          <Route path="BlogCard" element={<BlogCard />} />
-          <Route path="/Blog1" element={<Blog1 />} />
-          <Route path="/Blog2" element={<Blog2 />} />
-         <Route path="/collection/:category" element={<CategoryPage />} />
-         <Route path="/productsearch" element={<Search />} />
-         <Route path="/AddToGallery" element={<AddToGallery />} />
-         <Route path="/DeliveryAddress" element={<DeliveryAddress />} />
-         <Route path="/order-success" element={<OrderSuccess />} />
+      {/* ✅ Global Header visible on all pages */}
+      <Header />
 
-
-        </Routes>
+      {/* ✅ Page content below header */}
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/admin" element={<AdminProductPage />} />
+        <Route path="/search" element={<ProductSearch />} />
+        <Route path="/product-details" element={<ProductDetails />} />
+        <Route path="/ImageSearch" element={<ImageSearch />} />
+        <Route path="/Collection" element={<Collection />} />
+        <Route path="/About" element={<About />} />
+        <Route path="/ContactForm" element={<ContactForm />} />
+        <Route path="/ConsultingSection" element={<ConsultingSection />} />
+        <Route path="/BlogCard" element={<BlogCard />} />
+        <Route path="/Blog1" element={<Blog1 />} />
+        <Route path="/Blog2" element={<Blog2 />} />
+        <Route path="/collection/:category" element={<CategoryPage />} />
+        <Route path="/productsearch" element={<Search />} />
+        <Route path="/AddToGallery" element={<AddToGallery />} />
+        <Route path="/DeliveryAddress" element={<DeliveryAddress />} />
+        <Route path="/order-success" element={<OrderSuccess />} />
+        <Route path="/signup" element={<SignupWithPhoneOTP />} />
+        <Route path="/login" element={<LoginWithEmailOrPhone />} />
+      </Routes>
     </Router>
   );
 }

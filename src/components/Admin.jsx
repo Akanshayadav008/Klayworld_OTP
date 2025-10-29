@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { db } from "./../../firebaseConfig";
+import { db } from "./../../firebaseConfig.jsx";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
 
 const AdminProductPage = () => {

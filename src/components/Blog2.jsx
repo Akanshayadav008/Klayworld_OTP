@@ -12,7 +12,6 @@ const Blog2 = () => {
 
   return (
     <>
-      <Header />
       <div className="blog-container">
         <img 
           src="/images/blog1.jpeg" 

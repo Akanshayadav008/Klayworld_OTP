@@ -21,7 +21,26 @@
     align-items: center;
     justify-content: space-between;
   }
+  .container2 {
+    width: 100%;
+    max-width: 1600px;
+    display: flex;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+    justify-content: flex-start;
+  }
   
+.contact2{
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.minimal-header{
+  display: flex;
+  padding: 0px;
+}
   /* Logo Styling */
   
   /* Contact Section */
@@ -254,3 +273,18 @@
     color:black;
 
   }
+
+  /* Add this in Header.css */
+.minimal-header .navbar,
+.minimal-header .search-bar,
+.minimal-header .add-to-gallery-button,
+.minimal-header div > span {
+  display: none;
+}
+
+.minimal-header .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 40px;
+}

@@ -218,7 +218,6 @@ const [maxPrice, setMaxPrice] = useState(Infinity);
 
   return (
     <div>
-      <Header />
       <div className="containerbox">
         <div className="searchinputBox">
           <div className="InputHeader">Text Analysis Tool</div>
