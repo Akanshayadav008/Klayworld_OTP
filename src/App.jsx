@@ -20,6 +20,7 @@ import DeliveryAddress from "./components/DeliveryAddress";
 import OrderSuccess from "./components/OrderSuccess";
 import SignupWithPhoneOTP from "./components/Signup";
 import LoginWithEmailOrPhone from "./components/login";
+import Tag from "./components/Tag";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
       {/* ✅ Page content below header */}
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/tag/:tag" element={<Tag />} />
         <Route path="/admin" element={<AdminProductPage />} />
         <Route path="/search" element={<ProductSearch />} />
         <Route path="/product-details" element={<ProductDetails />} />

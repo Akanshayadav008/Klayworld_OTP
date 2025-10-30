@@ -8,6 +8,7 @@ import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import Footer from "./Footer";
 import { BookingSection, BlogSection } from "./BookingSection";
 import PopularBrands from "./PopularBrands";
+import CategoriesSection from "./CategoriesSection";
 
 
 
@@ -88,6 +89,7 @@ const HeaderDesign = () => {
       </div>
 
 <BookingSection />
+ <CategoriesSection />
 <BlogSection />
 <PopularBrands />
       <Footer />

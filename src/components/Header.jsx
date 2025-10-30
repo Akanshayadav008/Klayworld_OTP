@@ -103,12 +103,11 @@ function Header() {
         </a>
 
         <div>
-          <span>
-            <Link to="/login"><span>Login</span></Link>
-          </span>
-          <span>
-            <Link to="/signup"><span>Signup</span></Link>
-          </span>
+         <span className="auth-buttons">
+  <Link to="/signup" className="signup-btn">Sign up</Link>
+  <Link to="/login" className="signin-btn">Sign in</Link>
+</span>
+
         </div>
       </div>
     </header>

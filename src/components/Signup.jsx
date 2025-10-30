@@ -44,6 +44,7 @@ export default function SignupWithPhoneOTP() {
   const [captchaRootId] = useState(
     () => `recaptcha-root-${Math.random().toString(36).slice(2)}`
   );
+  const hasWrittenRef = useRef(false);
   const recaptchaRef = useRef(null);
   const widgetIdRef = useRef(null);
   const childIdRef = useRef(null);
@@ -171,17 +172,24 @@ export default function SignupWithPhoneOTP() {
     widgetIdRef.current = null;
   };
 
-  useEffect(() => {
-    auth?.useDeviceLanguage?.();
-    const unsub = onAuthStateChanged(auth, (u) => {
-      if (u) window.location.assign("https://ai.klayworld.com");
-    });
-    return () => {
-      unsub();
-      teardownRecaptcha();
-      if (auth?.currentUser) signOut(auth).catch(() => {});
-    };
-  }, []);
+ useEffect(() => {
+  auth?.useDeviceLanguage?.();
+
+  // Auth observer for UI/debugging only. Do NOT redirect here.
+  const unsub = onAuthStateChanged(auth, (u) => {
+    console.log("Auth state changed, signed in:", !!u);
+    // IMPORTANT: do not redirect here because the Firestore profile write
+    // might still be pending. We'll redirect only after successful setDoc.
+  });
+
+  return () => {
+    unsub();
+    teardownRecaptcha();
+    // optional: only sign out on unmount if you really want to force fresh signups
+    if (auth?.currentUser) signOut(auth).catch(() => {});
+  };
+}, []);
+
 
   // ---------- FORM HANDLERS ----------
   const showError = (f) =>
@@ -243,44 +251,106 @@ export default function SignupWithPhoneOTP() {
     }
   };
 
-  const verifyOtp = async () => {
-    setMessage("");
-    if (!otp.trim()) return setMessage("Enter the 6-digit code.");
-    if (!confirmationResult)
-      return setMessage("No OTP session. Request OTP again.");
-    setLoading(true);
+  // place this helper above verifyOtp in your component
+const safeLinkEmail = async (user, email, password) => {
+  if (!email || !password) return { linked: false, error: null, code: null };
+  try {
+    const emailCred = EmailAuthProvider.credential(email.trim(), password);
+    const linkResult = await linkWithCredential(user, emailCred);
+    console.log("safeLinkEmail: linked email credential:", linkResult);
+    return { linked: true, error: null, code: null };
+  } catch (linkErr) {
+    console.error("safeLinkEmail: linkWithCredential error:", linkErr);
+    return { linked: false, error: linkErr, code: linkErr?.code || null };
+  }
+};
+
+// REPLACE your old verifyOtp with this one:
+const verifyOtp = async () => {
+  setMessage("");
+  if (!otp.trim()) return setMessage("Enter the 6-digit code.");
+  if (!confirmationResult) return setMessage("No OTP session. Request OTP again.");
+  if (loading) return;
+  setLoading(true);
+
+  try {
+    // 1) Confirm OTP
+    const cred = await confirmationResult.confirm(otp.trim());
+    const user = cred.user;
+    console.log("verifyOtp: confirmed", { uid: user?.uid, phone: user?.phoneNumber });
+
+    // 2) (non-fatal) update display name
     try {
-      const cred = await confirmationResult.confirm(otp.trim());
-      const user = cred.user;
       await updateProfile(user, {
         displayName: `${form.firstName.trim()} ${form.lastName.trim()}`,
       });
-      const emailCred = EmailAuthProvider.credential(
-        form.email.trim(),
-        form.password
-      );
-      await linkWithCredential(user, emailCred);
+    } catch (e) {
+      console.warn("updateProfile non-fatal:", e);
+    }
+
+    // 3) (non-blocking) link email/password if provided
+    if (form.email && form.password) {
+      const linkInfo = await safeLinkEmail(user, form.email, form.password);
+      if (!linkInfo.linked) {
+        if (linkInfo.code === "auth/email-already-in-use") {
+          setMessage((m) => (m ? m + "\n" : "") + "Email already in use. Account created with phone only.");
+        } else if (linkInfo.code === "auth/weak-password") {
+          setMessage((m) => (m ? m + "\n" : "") + "Weak password. Email linking failed.");
+        } else if (linkInfo.error) {
+          setMessage((m) => (m ? m + "\n" : "") + `Email linking failed: ${linkInfo.error?.message || linkInfo.code}`);
+        }
+      } else {
+        setMessage((m) => (m ? m + "\n" : "") + "✓ Email linked successfully.");
+      }
+    }
+
+    // 4) Write user profile to Firestore
+    try {
+      if (!user || !user.uid) throw new Error("No user UID available.");
       await setDoc(
         doc(db, "users", user.uid),
         {
           uid: user.uid,
           firstName: form.firstName.trim(),
           lastName: form.lastName.trim(),
-          email: form.email.trim(),
-          phone: user.phoneNumber,
-          company: form.company.trim() || null,
+          email: form.email?.trim() || null,
+          phone: user.phoneNumber || normalizePhone(form.phone),
+          company: form.company?.trim() || null,
+          phoneVerified: true,
           createdAt: serverTimestamp(),
         },
         { merge: true }
       );
-      setMessage("✓ Account created! Redirecting…");
-      setTimeout(() => window.location.assign("https://ai.klayworld.com"), 800);
-    } catch (e) {
-      setMessage("Verification failed. " + e.message);
-    } finally {
+      console.log("verifyOtp: setDoc succeeded");
+    } catch (dbErr) {
+      console.error("verifyOtp: Firestore write failed:", dbErr);
+      setMessage(`Could not save profile: ${dbErr?.code || ""} ${dbErr?.message || dbErr}`);
       setLoading(false);
+      return; // stop here; we won't show success text if DB write failed
     }
-  };
+
+    // 5) (optional) sign the user out so they truly need to "login now"
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.warn("signOut after signup failed (non-fatal):", e);
+    }
+
+    // 6) Show final success message; DO NOT redirect
+    setConfirmationResult(null);   // collapse OTP UI
+    setOtp("");
+    setMessage("✓ Account created. You can log in now.");
+  } catch (e) {
+    console.error("verifyOtp: verification failed:", e);
+    if (e?.code === "auth/invalid-verification-code") setMessage("Invalid code. Please check and try again.");
+    else if (e?.code === "auth/code-expired") setMessage("Code expired. Please request a new OTP.");
+    else setMessage("Verification failed. " + (e?.message || String(e)));
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   // ---------- UI ----------
   return (

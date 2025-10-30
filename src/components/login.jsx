@@ -5,8 +5,6 @@ import {
   browserLocalPersistence,
   onAuthStateChanged,
   fetchSignInMethodsForEmail,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
 } from "firebase/auth";
 import { auth } from "./../../firebaseConfig";
 import { useNavigate } from "react-router-dom";
@@ -30,34 +28,67 @@ export default function LoginWithEmailOrPhone() {
   const recaptchaRef = useRef(null);
   const widgetIdRef = useRef(null);
   const creatingRef = useRef(false);
+  const childIdRef = useRef(null);
 
-  useEffect(() => {
-    setPersistence(auth, browserLocalPersistence).catch(() => {});
-    const unsub = onAuthStateChanged(auth, (u) => {
-      if (u) window.location.assign("https://ai.klayworld.com");
-    });
-    return () => {
-      try {
-        recaptchaRef.current?.clear?.();
-      } catch {}
-      unsub();
-    };
-  }, []);
+  // ---------- HELPERS ----------
+  const normalizePhone = (v) => {
+    if (!v) return "";
+    const cleaned = v.trim().replace(/[\s\-\(\)]/g, "");
+    if (/^\+\d{8,15}$/.test(cleaned)) return cleaned;
+    if (/^\d{10}$/.test(cleaned)) return "+91" + cleaned; // default to +91 for 10-digit inputs
+    return cleaned;
+  };
 
-  useEffect(() => {
-    auth?.useDeviceLanguage?.();
-  }, []);
+  // Non-blocking phone existence check via your API
+  // Returns: true (exists), false (doesn't), or null (unknown/error/missing)
+  async function checkPhoneExists(normalizedE164) {
+    try {
+      const endpoint = import.meta.env.VITE_CHECK_PHONE_URL;
+      if (!endpoint) return null; // don't block if not configured
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: normalizedE164 }),
+      });
+      const data = await res.json();
+      // Expecting { exists: boolean }
+      if (typeof data?.exists === "boolean") return data.exists;
+      return null;
+    } catch {
+      return null;
+    }
+  }
 
   const createFreshChild = () => {
     const root = document.getElementById(captchaRootId);
-    root.innerHTML = "";
+    if (!root) return null;
+
+    // clear previous child if any
+    if (childIdRef.current) {
+      const prev = document.getElementById(childIdRef.current);
+      if (prev) prev.remove();
+      childIdRef.current = null;
+    }
+
     const childId = `login-recaptcha-child-${Math.random()
       .toString(36)
       .slice(2)}`;
     const child = document.createElement("div");
     child.id = childId;
     root.appendChild(child);
+    childIdRef.current = childId;
     return childId;
+  };
+
+  const teardownRecaptcha = () => {
+    try {
+      if (window?.grecaptcha && widgetIdRef.current != null) {
+        window.grecaptcha.reset(widgetIdRef.current);
+      }
+      recaptchaRef.current?.clear?.();
+    } catch {}
+    recaptchaRef.current = null;
+    widgetIdRef.current = null;
   };
 
   const setupRecaptcha = async () => {
@@ -66,12 +97,17 @@ export default function LoginWithEmailOrPhone() {
     }
     if (creatingRef.current) return recaptchaRef.current;
     creatingRef.current = true;
+
     try {
       const childId = createFreshChild();
+      const { RecaptchaVerifier } = await import("firebase/auth"); // dynamic import avoids SSR/window timing issues
       const verifier = new RecaptchaVerifier(auth, childId, {
         size: "invisible",
         callback: () => {},
-        "expired-callback": () => setMsg("reCAPTCHA expired. Try again."),
+        "expired-callback": () => {
+          setMsg("reCAPTCHA expired. Try again.");
+          teardownRecaptcha();
+        },
       });
       recaptchaRef.current = verifier;
       const wid = await verifier.render();
@@ -84,18 +120,23 @@ export default function LoginWithEmailOrPhone() {
     }
   };
 
-  async function checkPhoneExists(normalizedE164) {
-    const endpoint = import.meta.env.VITE_CHECK_PHONE_URL;
-    if (!endpoint) throw new Error("VITE_CHECK_PHONE_URL not set.");
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: normalizedE164 }),
+  // ---------- EFFECTS ----------
+  useEffect(() => {
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (u) window.location.assign("https://ai.klayworld.com");
     });
-    const data = await res.json();
-    return data.exists;
-  }
+    return () => {
+      teardownRecaptcha();
+      unsub();
+    };
+  }, []);
 
+  useEffect(() => {
+    auth?.useDeviceLanguage?.();
+  }, []);
+
+  // ---------- EMAIL LOGIN ----------
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     setMsg("");
@@ -133,15 +174,17 @@ export default function LoginWithEmailOrPhone() {
     }
   };
 
+  // ---------- PHONE OTP ----------
   const sendOtp = async () => {
     setMsg("");
-    const normalized = phone.replace(/\s|-/g, "");
-    if (!normalized.trim().startsWith("+"))
-      return setMsg("Use E.164, e.g. +91XXXXXXXXXX");
+    const normalized = normalizePhone(phone);
+    if (!normalized.startsWith("+"))
+      return setMsg("Enter valid phone e.g. +91XXXXXXXXXX");
     setLoading(true);
     try {
+      // Optional pre-check; non-blocking if API is missing/unreliable
       const exists = await checkPhoneExists(normalized.trim());
-      if (!exists) {
+      if (exists === false) {
         setMsg("No account found for this phone. Please sign up first.");
         navigate("/signup", {
           replace: true,
@@ -149,7 +192,9 @@ export default function LoginWithEmailOrPhone() {
         });
         return;
       }
+
       const appVerifier = await setupRecaptcha();
+      const { signInWithPhoneNumber } = await import("firebase/auth");
       const confirmation = await signInWithPhoneNumber(
         auth,
         normalized.trim(),
@@ -157,8 +202,9 @@ export default function LoginWithEmailOrPhone() {
       );
       confirmationRef.current = confirmation;
       setMsg("OTP sent. Check your phone.");
-    } catch {
-      setMsg("Failed to send OTP. Please try again.");
+    } catch (e) {
+      setMsg("Failed to send OTP. " + (e?.message || "Please try again."));
+      teardownRecaptcha(); // ensure a fresh verifier on next attempt
     } finally {
       setLoading(false);
     }
@@ -168,7 +214,7 @@ export default function LoginWithEmailOrPhone() {
     setMsg("");
     if (!confirmationRef.current) return setMsg("Send OTP first.");
     const code = otp.replace(/\D/g, "");
-    if (!code) return setMsg("Enter the 6-digit OTP.");
+    if (code.length !== 6) return setMsg("Enter the 6-digit OTP.");
     setLoading(true);
     try {
       await confirmationRef.current.confirm(code);
@@ -183,16 +229,17 @@ export default function LoginWithEmailOrPhone() {
 
   // ---------- STYLES ----------
   const inputBox = {
-     width: "100%",
-                padding: "0.2rem",
-                fontSize: "1.1rem",
-                letterSpacing: "5px",
-                border: "1px solid #c6c1b8",
-                borderRadius: "6px",
-                textAlign: "center",
-                marginBottom: "1rem",
+    width: "100%",
+    padding: "0.2rem",
+    fontSize: "1.1rem",
+    letterSpacing: "5px",
+    border: "1px solid #c6c1b8",
+    borderRadius: "6px",
+    textAlign: "center",
+    marginBottom: "1rem",
   };
 
+  // ---------- UI (UNCHANGED) ----------
   return (
     <div
       style={{

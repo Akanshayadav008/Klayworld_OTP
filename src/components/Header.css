@@ -21,6 +21,47 @@
     align-items: center;
     justify-content: space-between;
   }
+
+.auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Inter', sans-serif;
+}
+
+.signup-btn {
+  background-color: transparent;
+  color: #4a4a4a;
+  border: none;
+  font-size: 14px;
+  font-weight: 400;
+  padding: 6px 5px;
+  text-decoration: none;
+  border: 1px solid grey;
+  border-radius: 2px;
+  
+}
+
+.signup-btn:hover {
+  color: #000;
+}
+
+.signin-btn {
+  background-color: #2e2e2e;
+  color: #fff;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 5px;
+  border-radius: 2px;
+  text-decoration: none;
+}
+
+.signin-btn:hover {
+  background-color: #1f1f1f;
+}
+
+
   .container2 {
     width: 100%;
     max-width: 1600px;
