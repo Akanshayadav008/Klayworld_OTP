@@ -1,101 +1,98 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { db } from "../../firebaseConfig";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import "../components/CategoryPage.css";
-import Header from "./Header";
 import Footer from "./Footer";
 
-const Tag = () => {
-  const { tag } = useParams(); // e.g. 'living-room'
-  const navigate = useNavigate();
-  const [tags, setTags] = useState([]);
 
-  // Convert 'living-room' → 'Living Room'
+const Tag = () => {
+  const { tag } = useParams();
+  const [products, setProducts] = useState([]);
+
+
   const formattedTag = tag
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
-  useEffect(() => {
-    const fetchTags = async () => {
-      try {
-        console.log(`📢 Fetching tags for category: ${formattedTag}`);
 
-        // 🔍 Query Firestore for products that have this category
-        const tagQuery = query(
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const q = query(
           collection(db, "products"),
-          where("category", "array-contains", formattedTag)
+          where("tag", "array-contains", formattedTag)
         );
 
-        const querySnapshot = await getDocs(tagQuery);
 
-        if (querySnapshot.empty) {
-          console.log(`❌ No products found for category: ${formattedTag}`);
-          setTags([]);
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) {
+          setProducts([]);
           return;
         }
 
-        // 🧩 Extract unique tags from products
-        let tagMap = new Map();
 
-        querySnapshot.forEach((doc) => {
+        const productList = snapshot.docs.map((doc) => {
           const data = doc.data();
+         
+          // Select first available image
+          let imageURL =
+            data.image?.[0] ||
+            data.tileImage?.[0] ||
+            data.highlighterRendersURL?.[0] ||
+            "https://via.placeholder.com/200";
 
-          if (data.tag && Array.isArray(data.tag)) {
-            data.tag.forEach((tagItem) => {
-              if (!tagMap.has(tagItem)) {
-                let imageURL = "https://via.placeholder.com/150";
 
-                if (data.image && data.image.length > 0) imageURL = data.image[0];
-                else if (data.tileImage && data.tileImage.length > 0)
-                  imageURL = data.tileImage[0];
-                else if (data.highlighterRendersURL && data.highlighterRendersURL.length > 0)
-                  imageURL = data.highlighterRendersURL[0];
-
-                tagMap.set(tagItem, { id: tagItem, label: tagItem, image: imageURL });
-              }
-            });
-          }
+          return {
+            id: doc.id,
+            name: data.name,
+            image: imageURL
+          };
         });
 
-        setTags(Array.from(tagMap.values()));
+
+        setProducts(productList);
+
+
       } catch (error) {
-        console.error("❌ Error fetching tags:", error);
+        console.error("Error fetching products:", error);
       }
     };
 
-    fetchTags();
+
+    fetchProducts();
   }, [formattedTag]);
 
-  const handleTagClick = (selectedTag) => {
-    navigate(`/productsearch?category=${formattedTag.toLowerCase()}&tag=${selectedTag.toLowerCase()}`);
-  };
 
   return (
     <>
       <div className="category-section">
-        <h1>{formattedTag} Tags</h1>
-        {tags.length === 0 ? (
-          <p>No tags found for this category.</p>
+        <h1>{formattedTag}</h1>
+
+
+        {products.length === 0 ? (
+          <p>No products found for this tag.</p>
         ) : (
           <div className="finish-list">
-            {tags.map((item) => (
-              <div
-                key={item.id}
-                className="finish-container"
-                onClick={() => handleTagClick(item.label)}
-              >
-                <img src={item.image} alt={item.label} className="finish-image" />
-                <div className="finish-label">{item.label}</div>
+            {products.map((item) => (
+              <div key={item.id} className="finish-container">
+                <img src={item.image} alt={item.name} className="finish-image"  onClick={() => (window.location.href = `/product-details?id=${item.id}`)} />
+                <div className="finish-label" onClick={() => (window.location.href = `/product-details?id=${item.id}`)} >{item.name}</div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+
       <Footer />
     </>
   );
 };
 
+
 export default Tag;
+
+
+

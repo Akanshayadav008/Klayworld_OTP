@@ -6,11 +6,13 @@ const CategoriesSection = () => {
   const navigate = useNavigate();
 
   const categories = [
-    { img: "images/residential.png", name: "Living Room" },
-    { img: "images/residential.png", name: "Bathroom" },
-    { img: "images/residential.png", name: "Kitchen" },
-    { img: "images/residential.png", name: "Bedroom" },
-    { img: "images/residential.png", name: "Outdoor" },
+    { img: "images/residential.png", name: "Residential" },
+    { img: "images/hotel.png", name: "Hospitality" },
+    { img: "images/commercial.png", name: "Commercial" },
+    { img: "images/restaurant.png", name: "Restaurants" },
+    { img: "images/Corporate.png", name: "Corporate" },
+    { img: "images/retail.png", name: "Retail" },
+
   ];
 
   const handleCategoryClick = (name) => {

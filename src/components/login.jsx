@@ -6,8 +6,10 @@ import {
   onAuthStateChanged,
   fetchSignInMethodsForEmail,
 } from "firebase/auth";
-import { auth } from "./../../firebaseConfig";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { auth, db } from "./../../firebaseConfig";
 import { useNavigate } from "react-router-dom";
+
 
 export default function LoginWithEmailOrPhone() {
   const navigate = useNavigate();
@@ -175,40 +177,43 @@ export default function LoginWithEmailOrPhone() {
   };
 
   // ---------- PHONE OTP ----------
-  const sendOtp = async () => {
-    setMsg("");
-    const normalized = normalizePhone(phone);
-    if (!normalized.startsWith("+"))
-      return setMsg("Enter valid phone e.g. +91XXXXXXXXXX");
-    setLoading(true);
-    try {
-      // Optional pre-check; non-blocking if API is missing/unreliable
-      const exists = await checkPhoneExists(normalized.trim());
-      if (exists === false) {
-        setMsg("No account found for this phone. Please sign up first.");
-        navigate("/signup", {
-          replace: true,
-          state: { phone: normalized.trim() },
-        });
-        return;
-      }
 
-      const appVerifier = await setupRecaptcha();
-      const { signInWithPhoneNumber } = await import("firebase/auth");
-      const confirmation = await signInWithPhoneNumber(
-        auth,
-        normalized.trim(),
-        appVerifier
-      );
-      confirmationRef.current = confirmation;
-      setMsg("OTP sent. Check your phone.");
-    } catch (e) {
-      setMsg("Failed to send OTP. " + (e?.message || "Please try again."));
-      teardownRecaptcha(); // ensure a fresh verifier on next attempt
-    } finally {
+
+const sendOtp = async () => {
+  setMsg("");
+  const normalized = normalizePhone(phone);
+  if (!normalized.startsWith("+"))
+    return setMsg("Enter valid phone e.g. +91XXXXXXXXXX");
+  setLoading(true);
+  try {
+    // 🔍 Step 1: Check if phone exists in Firestore
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("phone", "==", normalized.trim()));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      setMsg("No account found for this phone. Please sign up first.");
       setLoading(false);
+      return;
     }
-  };
+
+    // ✅ Step 2: If user exists, send OTP
+    const appVerifier = await setupRecaptcha();
+    const { signInWithPhoneNumber } = await import("firebase/auth");
+    const confirmation = await signInWithPhoneNumber(
+      auth,
+      normalized.trim(),
+      appVerifier
+    );
+    confirmationRef.current = confirmation;
+    setMsg("OTP sent. Check your phone.");
+  } catch (e) {
+    setMsg("Failed to send OTP. " + (e?.message || "Please try again."));
+    teardownRecaptcha();
+  } finally {
+    setLoading(false);
+  }
+};
 
   const verifyOtp = async () => {
     setMsg("");

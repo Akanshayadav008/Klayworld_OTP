@@ -247,7 +247,8 @@ body {
     position: relative;
     width: 100%;
     height: 480px;
-    background-image: url("images/Background-image.png");
+    background-image: url("../images/Background-image1.png");
+
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
