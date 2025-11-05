@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCartShopping,
@@ -6,21 +6,50 @@ import {
   faMagnifyingGlass,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth, db} from "../../firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
 import "../components/Header.css";
 
 function Header() {
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [userName, setUserName] = useState("");
   const navigate = useNavigate();
-  const location = useLocation(); // ✅ Detect current page
+  const location = useLocation();
+
+  // ✅ Check login state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const userRef = doc(db, "users", user.uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            setUserName(userSnap.data().name || user.displayName || "");
+          } else {
+            setUserName(user.displayName || "User");
+          }
+        } catch (error) {
+          console.error("Error fetching user:", error);
+        }
+      } else {
+        setUserName("");
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    setUserName("");
+    navigate("/login");
+  };
 
   const handleFinishClick = (finish) => {
     navigate(`/productsearch?&finish=${finish.toLowerCase()}`);
   };
 
-  // ✅ Define routes where only minimal header is shown
   const minimalHeaderRoutes = ["/login", "/signup"];
-
-  // ✅ Check if current route matches one of those
   const isMinimalHeader = minimalHeaderRoutes.includes(location.pathname);
 
   // ✅ Minimal Header (for login/signup)
@@ -31,7 +60,7 @@ function Header() {
           <div className="logo">
             <img src="/images/logo.png" alt="KLAY Logo" />
           </div>
-          <div className="contact2" >
+          <div className="contact2">
             <FontAwesomeIcon icon={faPhone} />
             <p>+91 9871400020</p>
           </div>
@@ -40,7 +69,7 @@ function Header() {
     );
   }
 
-  // ✅ Full Header (for all other pages)
+  // ✅ Full Header (for other pages)
   return (
     <header className="main-header">
       <div className="container">
@@ -103,11 +132,19 @@ function Header() {
         </a>
 
         <div>
-         <span className="auth-buttons">
-  <Link to="/signup" className="signup-btn">Sign up</Link>
-  <Link to="/login" className="signin-btn">Sign in</Link>
-</span>
-
+          {userName ? (
+            <span className="auth-buttons">
+              <span className="user-name">Hi, {userName}</span>
+              <button onClick={handleLogout} className="logout-btn">
+                Logout
+              </button>
+            </span>
+          ) : (
+            <span className="auth-buttons">
+              <Link to="/signup" className="signup-btn">Sign up</Link>
+              <Link to="/login" className="signin-btn">Sign in</Link>
+            </span>
+          )}
         </div>
       </div>
     </header>

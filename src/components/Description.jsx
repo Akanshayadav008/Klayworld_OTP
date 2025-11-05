@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { db } from './../../firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from './../../firebaseConfig';
+import { doc, getDoc, setDoc, serverTimestamp, query, where, getDocs, limit, collection } from 'firebase/firestore';
 import './Description.css';
 import Header from './Header';
 import Footer from './Footer';
 
-
 // Import necessary functions from Firestore
-import { query, where, getDocs, limit, collection } from 'firebase/firestore';
 
 const fetchSimilarProducts = async () => {
   if (!product.category) return;
@@ -251,35 +249,68 @@ const ProductDetails = () => {
     // Show alert
     alert("Product added to gallery!");
   };
-  const handleBookSample = () => {
- 
-    const selectedProduct = {
-      tileImage: product.tileImage?.[0] || "",
-      ratings: product.ratings || "5.0",
-      vendor_id: product.vendor_id,
-      name: product.name,
-      selectedThickness: selectedThickness,
-      space: product.space,
-      selectedSize: selectedSize,
-      price: currentPrice,
-      id: product.product_id,
-      sample: true, // ✅ Mark as sample
-    };
- 
-    let galleryCart = JSON.parse(localStorage.getItem("galleryCart")) || [];
- 
-    const isAlreadyInCart = galleryCart.some(item => item.id === selectedProduct.id && item.sample === true);
-    if (isAlreadyInCart) {
+const handleBookSample = async () => {
+  const user = auth.currentUser;
+
+  if (!user) {
+    alert("Please sign in first to book a sample.");
+    return;
+  }
+
+ const selectedProduct = {
+  id: product.product_id,
+  name: product.name,
+  price: currentPrice,
+  selectedSize,
+  selectedThickness,
+  space: product.space || [],
+  vendor_id: product.vendor_id,
+  tileImage: product.tileImage?.[0] || "",
+  sample: true,
+  quantity: 1,
+  bookedAt: new Date().toISOString(), // ✅ replace serverTimestamp()
+};
+
+
+  try {
+    const cartRef = doc(db, "carts", user.uid);
+    const cartSnap = await getDoc(cartRef);
+
+    let existingItems = [];
+    if (cartSnap.exists()) {
+      const data = cartSnap.data();
+      existingItems = Array.isArray(data.items) ? data.items : [];
+    }
+
+    // Prevent duplicate sample booking
+    const alreadyExists = existingItems.some(
+      (item) => item.id === selectedProduct.id && item.sample === true
+    );
+    if (alreadyExists) {
       alert("Sample is already booked for this product.");
       return;
     }
- 
-    galleryCart.push(selectedProduct);
-    localStorage.setItem("galleryCart", JSON.stringify(galleryCart));
- 
+
+    existingItems.push(selectedProduct);
+
+    await setDoc(
+      cartRef,
+      {
+        uid: user.uid,
+        items: existingItems,
+        lastUpdated: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
     alert("Sample booked successfully!");
-  };
- 
+  } catch (error) {
+    console.error("Error saving sample to Firestore:", error);
+    alert("Failed to save sample. Please try again.");
+  }
+};
+
+
  
 
 
@@ -427,7 +458,10 @@ const ProductDetails = () => {
             </button>
 
 
-            <button onClick={handleAddToGallery} id="AddToCart">Add to Cart</button>
+            <button id="AddToCart" disabled style={{ opacity: 0.6, cursor: "not-allowed" }}>
+  Add to Cart
+</button>
+
           </div>
           <button id="buyNow" style={{ display: "none" }} >
             Buy Now - <span id="selectedPrice">{currentPrice}</span>

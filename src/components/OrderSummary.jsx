@@ -13,11 +13,11 @@ const OrderSummary = () => {
         <h3>Order Summary</h3>
         <div className="summary-row">
           <span>Subtotal</span>
-          <span>₹{subtotal.toLocaleString()}</span>
+          <span>₹0</span>
         </div>
         <div className="summary-row">
           <span>Delivery Charges</span>
-          <span>₹{delivery}</span>
+          <span>₹0</span>
         </div>
         <div className="summary-row">
           <span>Discount</span>

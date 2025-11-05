@@ -308,19 +308,22 @@ const verifyOtp = async () => {
     try {
       if (!user || !user.uid) throw new Error("No user UID available.");
       await setDoc(
-        doc(db, "users", user.uid),
-        {
-          uid: user.uid,
-          firstName: form.firstName.trim(),
-          lastName: form.lastName.trim(),
-          email: form.email?.trim() || null,
-          phone: user.phoneNumber || normalizePhone(form.phone),
-          company: form.company?.trim() || null,
-          phoneVerified: true,
-          createdAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
+  doc(db, "users", user.uid),
+  {
+    uid: user.uid,
+    firstName: form.firstName.trim(),
+    lastName: form.lastName.trim(),
+    email: form.email?.trim() || null,
+    phone: user.phoneNumber || normalizePhone(form.phone),
+    company: form.company?.trim() || null,
+    phoneVerified: true,
+    createdAt: serverTimestamp(),
+    weeklyOrderCount: 0,  // 🆕
+    lastOrderReset: serverTimestamp(), // 🆕
+  },
+  { merge: true }
+);
+
       console.log("verifyOtp: setDoc succeeded");
     } catch (dbErr) {
       console.error("verifyOtp: Firestore write failed:", dbErr);
@@ -328,6 +331,100 @@ const verifyOtp = async () => {
       setLoading(false);
       return; // stop here; we won't show success text if DB write failed
     }
+
+    // ----------------------------
+    // Additional writes: deliveryAddresses and cart
+    // ----------------------------
+    try {
+      // 1) Create a deliveryAddresses document with same UID (merge in case exists)
+      const deliveryPayload = {
+        uid: user.uid,
+        recipientName: "",
+        recipientMobile: "",
+        recipientEmail: "",
+        recipientCompany: "",
+        phoneVerified: true,
+        pincode: "",
+    state: "",
+    city: "",
+        createdAt: serverTimestamp(),
+         billingName: "",
+    billingMobile: "",
+    billingEmail: "",
+    billingCompany: "",
+    billingPincode: "",
+    billingState: "",
+    billingCity: "",
+
+      };
+      await setDoc(doc(db, "deliveryAddresses", user.uid), deliveryPayload, { merge: true });
+      console.log("verifyOtp: deliveryAddresses doc written:", user.uid);
+    } catch (delErr) {
+      console.error("verifyOtp: failed to write deliveryAddresses:", delErr);
+      // non-fatal — keep going
+    }
+
+try {
+      // 1) Create a deliveryAddresses document with same UID (merge in case exists)
+      const cartPayload = {
+        uid: user.uid,
+        items:"",
+        
+      };
+      await setDoc(doc(db, "carts", user.uid), cartPayload, { merge: true });
+      console.log("verifyOtp: carts doc written:", user.uid);
+    } catch (delErr) {
+      console.error("verifyOtp: failed to write carts:", delErr);
+      // non-fatal — keep going
+    }
+
+
+// 5) Create an empty cart (to be filled later when user books a sample)
+try {
+  const emptyCartPayload = {
+    uid: user.uid,
+    items: [], // intentionally empty
+    createdAt: serverTimestamp(),
+    lastUpdated: serverTimestamp(),
+  };
+  await setDoc(doc(db, "carts", user.uid), emptyCartPayload, { merge: true });
+  console.log("verifyOtp: empty cart initialized:", user.uid);
+} catch (cartErr) {
+  console.error("verifyOtp: failed to initialize empty cart:", cartErr);
+}
+
+
+
+
+
+// 5) Create an empty cart (to be filled later when user books a sample)
+try {
+  const emptyCartPayload = {
+    uid: user.uid,
+    items: [], // intentionally empty
+    createdAt: serverTimestamp(),
+    lastUpdated: serverTimestamp(),
+  };
+  await setDoc(doc(db, "carts", user.uid), emptyCartPayload, { merge: true });
+  console.log("verifyOtp: empty cart initialized:", user.uid);
+} catch (cartErr) {
+  console.error("verifyOtp: failed to initialize empty cart:", cartErr);
+}
+
+
+try {
+  const ordersPayload = {
+    uid: user.uid,
+    items: [], // always an array
+    createdAt: serverTimestamp(),
+    lastUpdated: serverTimestamp(),
+  };
+  await setDoc(doc(db, "orders", user.uid), ordersPayload, { merge: true });
+  console.log("verifyOtp: orders doc written:", user.uid);
+} catch (err) {
+  console.error("verifyOtp: failed to write orders:", err);
+}
+
 
     // 5) (optional) sign the user out so they truly need to "login now"
     try {

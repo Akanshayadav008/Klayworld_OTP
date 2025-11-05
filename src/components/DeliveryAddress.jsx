@@ -1,22 +1,21 @@
 import React, { useState } from "react";
-import Stepper from "./Stepper";
 import DeliveryAddressForm from "./FormDelivery";
 import BillingAddressForm from "./BillingAddressForm";
 import PaymentRazorpay from "./PaymentRazorpay";
 import OrderSummary from "./OrderSummary";
+import "./DeliveryAddress.css"; // optional, for layout tweaks
 
 function DeliveryAddress() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [deliveryData, setDeliveryData] = useState(null); // ✅ store delivery
+  const [deliveryData, setDeliveryData] = useState(null);
 
   const goNext = () => setCurrentStep((s) => Math.min(s + 1, 4));
   const goBack = () => setCurrentStep((s) => Math.max(s - 1, 1));
 
-  // ✅ When OTP is verified
   const handleDeliveryComplete = async (deliveryInfo) => {
-    setDeliveryData(deliveryInfo); // store it
-    await sendCartEmail(deliveryInfo); // send email to admin/customer
-    goNext(); // go to billing
+    setDeliveryData(deliveryInfo);
+    await sendCartEmail(deliveryInfo);
+    goNext();
   };
 
   const sendCartEmail = async (delivery) => {
@@ -28,22 +27,19 @@ function DeliveryAddress() {
           to: delivery.email,
           deliveryData: delivery,
           cartItems: JSON.parse(localStorage.getItem("galleryCart")) || [],
-          subtotal: 500, // ← put correct subtotal logic here
+          subtotal: 500,
         }),
       });
 
       const result = await response.json();
       console.log("Email response:", result);
-      alert("Emails sent successfully.");
     } catch (err) {
       console.error("Failed to send cart email:", err);
     }
   };
 
   return (
-    <div className="checkout-wizard">
-      <Stepper currentStep={currentStep} />
-
+    <div className="checkout-wizard-full">
       {currentStep === 1 && (
         <DeliveryAddressForm onNext={handleDeliveryComplete} />
       )}
@@ -53,7 +49,11 @@ function DeliveryAddress() {
       )}
 
       {currentStep === 3 && (
-        <PaymentRazorpay deliveryData={deliveryData} onNext={goNext} onBack={goBack} />
+        <PaymentRazorpay
+          deliveryData={deliveryData}
+          onNext={goNext}
+          onBack={goBack}
+        />
       )}
 
       {currentStep === 4 && <OrderSummary />}

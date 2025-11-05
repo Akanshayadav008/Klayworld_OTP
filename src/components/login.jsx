@@ -126,7 +126,8 @@ export default function LoginWithEmailOrPhone() {
   useEffect(() => {
     setPersistence(auth, browserLocalPersistence).catch(() => {});
     const unsub = onAuthStateChanged(auth, (u) => {
-      if (u) window.location.assign("https://ai.klayworld.com");
+     if (u) navigate("/");
+
     });
     return () => {
       teardownRecaptcha();
@@ -153,7 +154,8 @@ export default function LoginWithEmailOrPhone() {
       }
       await signInWithEmailAndPassword(auth, email.trim(), password);
       setMsg("✓ Logged in successfully. Redirecting...");
-      window.location.assign("https://ai.klayworld.com");
+navigate("/");
+
     } catch (err) {
       switch (err?.code) {
         case "auth/invalid-email":
@@ -224,7 +226,8 @@ const sendOtp = async () => {
     try {
       await confirmationRef.current.confirm(code);
       setMsg("✓ Logged in successfully. Redirecting...");
-      window.location.assign("https://ai.klayworld.com");
+navigate("/");
+
     } catch {
       setMsg("Incorrect OTP. Try again.");
     } finally {

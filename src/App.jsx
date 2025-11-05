@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Header from "./components/Header"; // ✅ Import Header
+import Header from "./components/Header"; 
 import Home from "./components/Home";
 import AdminProductPage from "./components/Admin";
 import ProductSearch from "./components/SearchPage";
@@ -22,7 +22,38 @@ import SignupWithPhoneOTP from "./components/Signup";
 import LoginWithEmailOrPhone from "./components/login";
 import Tag from "./components/Tag";
 
+// ✅ Redux + Firebase imports (added safely)
+import { useDispatch } from "react-redux";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebaseConfig";
+import { setUser, clearUser } from "./redux/userSlice";
+
 function App() {
+  const dispatch = useDispatch();
+
+  // ✅ Firebase Auth → Redux listener (no effect on routes)
+  useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    if (currentUser) {
+      // ✅ Only keep serializable fields
+      const userData = {
+        uid: currentUser.uid,
+        email: currentUser.email,
+        displayName: currentUser.displayName,
+        photoURL: currentUser.photoURL,
+        phoneNumber: currentUser.phoneNumber,
+        emailVerified: currentUser.emailVerified,
+      };
+      dispatch(setUser(userData));
+    } else {
+      dispatch(clearUser());
+    }
+  });
+
+  return () => unsubscribe();
+}, [dispatch]);
+
+
   return (
     <Router>
       {/* ✅ Global Header visible on all pages */}
