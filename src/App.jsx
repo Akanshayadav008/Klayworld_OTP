@@ -21,6 +21,7 @@ import OrderSuccess from "./components/OrderSuccess";
 import SignupWithPhoneOTP from "./components/Signup";
 import LoginWithEmailOrPhone from "./components/login";
 import Tag from "./components/Tag";
+import ForgotPassword from "./components/ForgotPassword";
 
 // ✅ Redux + Firebase imports (added safely)
 import { useDispatch } from "react-redux";
@@ -81,6 +82,8 @@ function App() {
         <Route path="/order-success" element={<OrderSuccess />} />
         <Route path="/signup" element={<SignupWithPhoneOTP />} />
         <Route path="/login" element={<LoginWithEmailOrPhone />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+
       </Routes>
     </Router>
   );

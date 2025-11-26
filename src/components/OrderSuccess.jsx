@@ -1,75 +1,36 @@
-import React, { useEffect } from "react";
-import Header from "./Header";
-import Footer from "./Footer";
-import "./OrderSuccess.css";
+import React from "react";
 
-const OrderSuccess = () => {
-  useEffect(() => {
-    const sendSuccessEmail = async () => {
-      // ✅ Get all necessary order data
-      const billing = JSON.parse(localStorage.getItem("billingAddress") || "{}");
-      const delivery = JSON.parse(localStorage.getItem("deliveryAddress") || "{}");
-      const cartItems = JSON.parse(localStorage.getItem("galleryCart") || "[]");
-
-      const email = billing?.companyEmail || billing?.email;
-      if (!email || cartItems.length === 0) return;
-
-      // ✅ Calculate subtotal
-      const subtotal = cartItems.reduce((total, item) => {
-        const sqft = item.sqftPerUnit ? item.quantity * item.sqftPerUnit : 0;
-        return total + (item.price * sqft || 0);
-      }, 0);
-
-      try {
-        await fetch("http://localhost:3000/send-success-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            customerEmail: email,
-            billingData: billing,
-            deliveryData: delivery,
-            cartItems,
-            subtotal,
-          }),
-        });
-      } catch (err) {
-        console.error("❌ Error sending success email:", err);
-      }
-    };
-
-    sendSuccessEmail();
-  }, []);
-
+export default function OrderSuccess() {
   return (
     <>
-      <div className="os-container">
-        <div className="os-box">
-          <div className="os-success">
-            <span>✔️</span> Order placed successfully
-          </div>
-          <div className="os-logo-section">
-            <img
-              src="https://seeklogo.com/images/R/razorpay-logo-83C707EF3F-seeklogo.com.png"
-              alt="Razorpay"
-            />
-          </div>
-          <p className="os-text">Your order is in process.</p>
-          <p className="os-text">
-            Please check your email for more details. If you have any queries,
-            please feel free to contact{" "}
-            <span className="os-contact">+91-9998333033</span> our support team.
-          </p>
-          <div className="os-buttons">
-            <a className="os-btn os-home-btn" href="/">
-              Back to home
-            </a>
-            <button className="os-btn os-shop-btn">Shop more</button>
-          </div>
-        </div>
+      <div className="success-container">
+        <h2>🎉 Order Placed Successfully!</h2>
+        <p>Your order has been placed.</p>
+        <p>Our team will get back to you within 24–48 hours.</p>
+
+        <button onClick={() => (window.location.href = "/")}>
+          Go to Home
+        </button>
       </div>
-      <Footer />
+
+      <style>{`
+        .success-container {
+          width: 100%;
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          text-align: center;
+          padding: 20px;
+        }
+        .success-container button {
+          margin-top: 20px;
+          padding: 10px 20px;
+          font-size: 16px;
+          cursor: pointer;
+        }
+      `}</style>
     </>
   );
-};
-
-export default OrderSuccess;
+}

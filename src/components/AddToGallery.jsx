@@ -9,9 +9,11 @@ import { useNavigate } from "react-router-dom";
 import { db, auth } from "../../firebaseConfig"; // ✅ correct path
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+import ExportProductsPDFButton from "./ExportProductsPDFButton";
+
 
 const OrderSummary = ({ subtotal, onCheckout }) => {
-  const delivery = 20;
+  const delivery = 0;
   const discount = 0;
   const total = subtotal + delivery - discount;
 
@@ -21,7 +23,7 @@ const OrderSummary = ({ subtotal, onCheckout }) => {
         <h3>Order Summary</h3>
         <div className="summary-row">
           <span>Subtotal</span>
-          <span>₹{subtotal.toLocaleString()}</span>
+          <span>₹0</span>
         </div>
         <div className="summary-row">
           <span>Delivery Charges</span>
@@ -33,7 +35,7 @@ const OrderSummary = ({ subtotal, onCheckout }) => {
         </div>
         <hr />
         <div className="summary-row total">
-          <strong>Total Amount</strong>₹{total.toLocaleString()}
+          <strong>Total Amount</strong>₹0
         </div>
         <button className="checkout-btn" onClick={onCheckout}>
           Checkout
@@ -214,30 +216,44 @@ const AddToGallery = () => {
               ) : (
                 cartItems.map((item, idx) => (
                   <div className="simple-cart-item" key={idx}>
-                    <div className="simple-item-info">
-                      <img
-                        src={getFirstImage(item.tileImage)}
-                        alt={item.name}
-                        className="simple-item-img"
-                      />
-                      <div>
-                        <div className="simple-item-title">{item.name}</div>
-                        {item.sample ? (
-                          <div className="sample-label">Sample</div>
-                        ) : (
-                          <div className="box-label">Box</div>
-                        )}
-                        <div className="simple-item-desc">
-                          Size: {item.selectedSize || "N/A"}
-                        </div>
-                        <div className="simple-item-desc">
-                          Thickness: {renderArray(item.selectedThickness)}
-                        </div>
-                        <div className="simple-item-desc">
-                          Category: {renderArray(item.space)}
-                        </div>
-                      </div>
-                    </div>
+                   <div className="simple-item-info">
+  <a
+    href={`product-details?id=${item.id}`}
+    className="simple-item-link"
+    style={{
+      display: "flex",
+      alignItems: "center",
+      textDecoration: "none",
+      color: "inherit",
+    }}
+  >
+    <img
+      src={getFirstImage(item.tileImage)}
+      alt={item.name}
+      className="simple-item-img"
+    />
+    <div>
+      <div className="simple-item-title" style={{ cursor: "pointer" }}>
+        {item.name}
+      </div>
+      {item.sample ? (
+        <div className="sample-label">Sample</div>
+      ) : (
+        <div className="box-label">Box</div>
+      )}
+      <div className="simple-item-desc">
+        Size: {item.selectedSize || "N/A"}
+      </div>
+      <div className="simple-item-desc">
+        Thickness: {renderArray(item.selectedThickness)}
+      </div>
+      <div className="simple-item-desc">
+        Category: {renderArray(item.space)}
+      </div>
+    </div>
+  </a>
+</div>
+
 
                     <div className="simple-item-actions">
                       <div className="simple-item-price">Rs 0</div>
@@ -263,8 +279,13 @@ const AddToGallery = () => {
                 ))
               )}
             </div>
+            
           )}
+          
+<ExportProductsPDFButton products={cartItems} />
         </div>
+        
+
 
         <div className="cart-column-order">
           <OrderSummary subtotal={subtotal} onCheckout={handleCheckout} />

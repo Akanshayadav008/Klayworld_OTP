@@ -10,7 +10,6 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { auth, db } from "./../../firebaseConfig";
 import { useNavigate } from "react-router-dom";
 
-
 export default function LoginWithEmailOrPhone() {
   const navigate = useNavigate();
 
@@ -32,28 +31,64 @@ export default function LoginWithEmailOrPhone() {
   const creatingRef = useRef(false);
   const childIdRef = useRef(null);
 
-  // ---------- HELPERS ----------
+  /* ======================= Helpers ======================= */
+
+  // Map Firebase error codes to user-friendly messages
+  function msgFromAuthError(err) {
+    const code = err?.code || "";
+    switch (code) {
+      // Most common for wrong email/password (newer SDKs)
+      case "auth/invalid-credential":
+      case "auth/invalid-login-credentials":
+        return "Incorrect email or password. Please try again.";
+
+      // Email/password specific
+      case "auth/invalid-email":
+        return "Please enter a valid email address.";
+      case "auth/user-disabled":
+        return "This account has been disabled.";
+      case "auth/user-not-found":
+        return "No account found with this email.";
+      case "auth/wrong-password": // older code
+        return "Incorrect password. Please try again.";
+      case "auth/too-many-requests":
+        return "Too many attempts. Please wait a bit and try again.";
+
+      // Phone/OTP specific
+      case "auth/invalid-verification-code":
+        return "The OTP you entered is incorrect.";
+      case "auth/code-expired":
+        return "The OTP has expired. Please request a new one.";
+      case "auth/invalid-verification-id":
+        return "Verification failed. Please resend the OTP.";
+      case "auth/captcha-check-failed":
+        return "reCAPTCHA failed. Please try again.";
+
+      default:
+        console.error("Firebase Auth error:", code, err?.message);
+        return "Login failed. Try again.";
+    }
+  }
+
   const normalizePhone = (v) => {
     if (!v) return "";
     const cleaned = v.trim().replace(/[\s\-\(\)]/g, "");
     if (/^\+\d{8,15}$/.test(cleaned)) return cleaned;
-    if (/^\d{10}$/.test(cleaned)) return "+91" + cleaned; // default to +91 for 10-digit inputs
+    if (/^\d{10}$/.test(cleaned)) return "+91" + cleaned; // default +91 for 10-digit inputs
     return cleaned;
   };
 
-  // Non-blocking phone existence check via your API
-  // Returns: true (exists), false (doesn't), or null (unknown/error/missing)
+  // Optional API check (non-blocking). Kept here for completeness.
   async function checkPhoneExists(normalizedE164) {
     try {
       const endpoint = import.meta.env.VITE_CHECK_PHONE_URL;
-      if (!endpoint) return null; // don't block if not configured
+      if (!endpoint) return null;
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: normalizedE164 }),
       });
       const data = await res.json();
-      // Expecting { exists: boolean }
       if (typeof data?.exists === "boolean") return data.exists;
       return null;
     } catch {
@@ -65,16 +100,13 @@ export default function LoginWithEmailOrPhone() {
     const root = document.getElementById(captchaRootId);
     if (!root) return null;
 
-    // clear previous child if any
     if (childIdRef.current) {
       const prev = document.getElementById(childIdRef.current);
       if (prev) prev.remove();
       childIdRef.current = null;
     }
 
-    const childId = `login-recaptcha-child-${Math.random()
-      .toString(36)
-      .slice(2)}`;
+    const childId = `login-recaptcha-child-${Math.random().toString(36).slice(2)}`;
     const child = document.createElement("div");
     child.id = childId;
     root.appendChild(child);
@@ -102,7 +134,7 @@ export default function LoginWithEmailOrPhone() {
 
     try {
       const childId = createFreshChild();
-      const { RecaptchaVerifier } = await import("firebase/auth"); // dynamic import avoids SSR/window timing issues
+      const { RecaptchaVerifier } = await import("firebase/auth");
       const verifier = new RecaptchaVerifier(auth, childId, {
         size: "invisible",
         callback: () => {},
@@ -122,12 +154,12 @@ export default function LoginWithEmailOrPhone() {
     }
   };
 
-  // ---------- EFFECTS ----------
+  /* ======================= Effects ======================= */
+
   useEffect(() => {
     setPersistence(auth, browserLocalPersistence).catch(() => {});
     const unsub = onAuthStateChanged(auth, (u) => {
-     if (u) navigate("/");
-
+      if (u) navigate("/");
     });
     return () => {
       teardownRecaptcha();
@@ -139,7 +171,8 @@ export default function LoginWithEmailOrPhone() {
     auth?.useDeviceLanguage?.();
   }, []);
 
-  // ---------- EMAIL LOGIN ----------
+  /* ======================= Email login ======================= */
+
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     setMsg("");
@@ -148,74 +181,58 @@ export default function LoginWithEmailOrPhone() {
     try {
       const methods = await fetchSignInMethodsForEmail(auth, email.trim());
       if (methods.length && !methods.includes("password")) {
+        setLoading(false);
         return setMsg(
           `This email uses a different sign-in method: ${methods.join(", ")}`
         );
       }
       await signInWithEmailAndPassword(auth, email.trim(), password);
       setMsg("✓ Logged in successfully. Redirecting...");
-navigate("/");
-
+      navigate("/");
     } catch (err) {
-      switch (err?.code) {
-        case "auth/invalid-email":
-          setMsg("Please enter a valid email address.");
-          break;
-        case "auth/user-disabled":
-          setMsg("This account has been disabled.");
-          break;
-        case "auth/user-not-found":
-          setMsg("No account found with this email.");
-          break;
-        case "auth/wrong-password":
-          setMsg("Incorrect password. Please try again.");
-          break;
-        default:
-          setMsg("Login failed. Try again.");
-      }
+      setMsg(msgFromAuthError(err));
     } finally {
       setLoading(false);
     }
   };
 
-  // ---------- PHONE OTP ----------
+  /* ======================= Phone OTP ======================= */
 
+  const sendOtp = async () => {
+    setMsg("");
+    const normalized = normalizePhone(phone);
+    if (!normalized.startsWith("+"))
+      return setMsg("Enter valid phone e.g. +91XXXXXXXXXX");
+    setLoading(true);
+    try {
+      // Check if phone exists in Firestore
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("phone", "==", normalized.trim()));
+      const querySnapshot = await getDocs(q);
 
-const sendOtp = async () => {
-  setMsg("");
-  const normalized = normalizePhone(phone);
-  if (!normalized.startsWith("+"))
-    return setMsg("Enter valid phone e.g. +91XXXXXXXXXX");
-  setLoading(true);
-  try {
-    // 🔍 Step 1: Check if phone exists in Firestore
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("phone", "==", normalized.trim()));
-    const querySnapshot = await getDocs(q);
+      if (querySnapshot.empty) {
+        setMsg("No account found for this phone. Please sign up first.");
+        setLoading(false);
+        return;
+      }
 
-    if (querySnapshot.empty) {
-      setMsg("No account found for this phone. Please sign up first.");
+      // Send OTP
+      const appVerifier = await setupRecaptcha();
+      const { signInWithPhoneNumber } = await import("firebase/auth");
+      const confirmation = await signInWithPhoneNumber(
+        auth,
+        normalized.trim(),
+        appVerifier
+      );
+      confirmationRef.current = confirmation;
+      setMsg("OTP sent. Check your phone.");
+    } catch (e) {
+      setMsg(msgFromAuthError(e));
+      teardownRecaptcha();
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // ✅ Step 2: If user exists, send OTP
-    const appVerifier = await setupRecaptcha();
-    const { signInWithPhoneNumber } = await import("firebase/auth");
-    const confirmation = await signInWithPhoneNumber(
-      auth,
-      normalized.trim(),
-      appVerifier
-    );
-    confirmationRef.current = confirmation;
-    setMsg("OTP sent. Check your phone.");
-  } catch (e) {
-    setMsg("Failed to send OTP. " + (e?.message || "Please try again."));
-    teardownRecaptcha();
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const verifyOtp = async () => {
     setMsg("");
@@ -226,16 +243,16 @@ const sendOtp = async () => {
     try {
       await confirmationRef.current.confirm(code);
       setMsg("✓ Logged in successfully. Redirecting...");
-navigate("/");
-
-    } catch {
-      setMsg("Incorrect OTP. Try again.");
+      navigate("/");
+    } catch (e) {
+      setMsg(msgFromAuthError(e));
     } finally {
       setLoading(false);
     }
   };
 
-  // ---------- STYLES ----------
+  /* ======================= Styles ======================= */
+
   const inputBox = {
     width: "100%",
     padding: "0.2rem",
@@ -247,7 +264,8 @@ navigate("/");
     marginBottom: "1rem",
   };
 
-  // ---------- UI (UNCHANGED) ----------
+  /* ======================= UI ======================= */
+
   return (
     <div
       style={{
@@ -322,7 +340,7 @@ navigate("/");
             {msg && (
               <p
                 style={{
-                  color: "#d32f2f",
+                  color: msg.startsWith("✓") ? "#2e7d32" : "#d32f2f",
                   fontSize: "13px",
                   marginBottom: "1rem",
                 }}
@@ -403,7 +421,7 @@ navigate("/");
             {msg && (
               <p
                 style={{
-                  color: "#d32f2f",
+                  color: msg.startsWith("✓") ? "#2e7d32" : "#d32f2f",
                   fontSize: "13px",
                   marginBottom: "1rem",
                 }}

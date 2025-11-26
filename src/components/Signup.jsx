@@ -21,8 +21,11 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { auth, db } from "../../firebaseConfig";
+import { useNavigate } from "react-router-dom";
 
 export default function SignupWithPhoneOTP() {
+  const navigate = useNavigate();
+
   // ----- form states -----
   const [form, setForm] = useState({
     firstName: "",
@@ -49,6 +52,11 @@ export default function SignupWithPhoneOTP() {
   const widgetIdRef = useRef(null);
   const childIdRef = useRef(null);
   const creatingRef = useRef(false);
+
+  // Gate redirect like login (not strictly needed once we navigate directly)
+  const readyToRedirectRef = useRef(false);
+  // ✅ NEW: track if we navigated, so cleanup doesn't sign out immediately
+  const didNavigateRef = useRef(false);
 
   // ---------- VALIDATION ----------
   const normalizePhone = (phone) => {
@@ -132,9 +140,7 @@ export default function SignupWithPhoneOTP() {
       if (prev && prev.parentNode) prev.parentNode.removeChild(prev);
       childIdRef.current = null;
     }
-    const newChildId = `recaptcha-child-${Math.random()
-      .toString(36)
-      .slice(2)}`;
+    const newChildId = `recaptcha-child-${Math.random().toString(36).slice(2)}`;
     const child = document.createElement("div");
     child.id = newChildId;
     root.appendChild(child);
@@ -172,24 +178,25 @@ export default function SignupWithPhoneOTP() {
     widgetIdRef.current = null;
   };
 
- useEffect(() => {
-  auth?.useDeviceLanguage?.();
+  useEffect(() => {
+    auth?.useDeviceLanguage?.();
 
-  // Auth observer for UI/debugging only. Do NOT redirect here.
-  const unsub = onAuthStateChanged(auth, (u) => {
-    console.log("Auth state changed, signed in:", !!u);
-    // IMPORTANT: do not redirect here because the Firestore profile write
-    // might still be pending. We'll redirect only after successful setDoc.
-  });
+    // Keep observer (like login). We also navigate directly later.
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (u && readyToRedirectRef.current) {
+        navigate("/", { replace: true });
+      }
+    });
 
-  return () => {
-    unsub();
-    teardownRecaptcha();
-    // optional: only sign out on unmount if you really want to force fresh signups
-    if (auth?.currentUser) signOut(auth).catch(() => {});
-  };
-}, []);
-
+    return () => {
+      unsub();
+      teardownRecaptcha();
+      // ❗ If we just navigated after success, don't sign out on unmount.
+      if (!didNavigateRef.current && auth?.currentUser) {
+        signOut(auth).catch(() => {});
+      }
+    };
+  }, [navigate]);
 
   // ---------- FORM HANDLERS ----------
   const showError = (f) =>
@@ -252,202 +259,186 @@ export default function SignupWithPhoneOTP() {
   };
 
   // place this helper above verifyOtp in your component
-const safeLinkEmail = async (user, email, password) => {
-  if (!email || !password) return { linked: false, error: null, code: null };
-  try {
-    const emailCred = EmailAuthProvider.credential(email.trim(), password);
-    const linkResult = await linkWithCredential(user, emailCred);
-    console.log("safeLinkEmail: linked email credential:", linkResult);
-    return { linked: true, error: null, code: null };
-  } catch (linkErr) {
-    console.error("safeLinkEmail: linkWithCredential error:", linkErr);
-    return { linked: false, error: linkErr, code: linkErr?.code || null };
-  }
-};
-
-// REPLACE your old verifyOtp with this one:
-const verifyOtp = async () => {
-  setMessage("");
-  if (!otp.trim()) return setMessage("Enter the 6-digit code.");
-  if (!confirmationResult) return setMessage("No OTP session. Request OTP again.");
-  if (loading) return;
-  setLoading(true);
-
-  try {
-    // 1) Confirm OTP
-    const cred = await confirmationResult.confirm(otp.trim());
-    const user = cred.user;
-    console.log("verifyOtp: confirmed", { uid: user?.uid, phone: user?.phoneNumber });
-
-    // 2) (non-fatal) update display name
+  const safeLinkEmail = async (user, email, password) => {
+    if (!email || !password) return { linked: false, error: null, code: null };
     try {
-      await updateProfile(user, {
-        displayName: `${form.firstName.trim()} ${form.lastName.trim()}`,
-      });
-    } catch (e) {
-      console.warn("updateProfile non-fatal:", e);
+      const emailCred = EmailAuthProvider.credential(email.trim(), password);
+      const linkResult = await linkWithCredential(user, emailCred);
+      console.log("safeLinkEmail: linked email credential:", linkResult);
+      return { linked: true, error: null, code: null };
+    } catch (linkErr) {
+      console.error("safeLinkEmail: linkWithCredential error:", linkErr);
+      return { linked: false, error: linkErr, code: linkErr?.code || null };
     }
+  };
 
-    // 3) (non-blocking) link email/password if provided
-    if (form.email && form.password) {
-      const linkInfo = await safeLinkEmail(user, form.email, form.password);
-      if (!linkInfo.linked) {
-        if (linkInfo.code === "auth/email-already-in-use") {
-          setMessage((m) => (m ? m + "\n" : "") + "Email already in use. Account created with phone only.");
-        } else if (linkInfo.code === "auth/weak-password") {
-          setMessage((m) => (m ? m + "\n" : "") + "Weak password. Email linking failed.");
-        } else if (linkInfo.error) {
-          setMessage((m) => (m ? m + "\n" : "") + `Email linking failed: ${linkInfo.error?.message || linkInfo.code}`);
-        }
-      } else {
-        setMessage((m) => (m ? m + "\n" : "") + "✓ Email linked successfully.");
+  // REPLACE your old verifyOtp with this one (keeps all your logic)
+  const verifyOtp = async () => {
+    setMessage("");
+    if (!otp.trim()) return setMessage("Enter the 6-digit code.");
+    if (!confirmationResult) return setMessage("No OTP session. Request OTP again.");
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      // 1) Confirm OTP
+      const cred = await confirmationResult.confirm(otp.trim());
+      const user = cred.user;
+      console.log("verifyOtp: confirmed", { uid: user?.uid, phone: user?.phoneNumber });
+
+      // 2) (non-fatal) update display name
+      try {
+        await updateProfile(user, {
+          displayName: `${form.firstName.trim()} ${form.lastName.trim()}`,
+        });
+      } catch (e) {
+        console.warn("updateProfile non-fatal:", e);
       }
-    }
 
-    // 4) Write user profile to Firestore
-    try {
-      if (!user || !user.uid) throw new Error("No user UID available.");
-      await setDoc(
-  doc(db, "users", user.uid),
-  {
-    uid: user.uid,
-    firstName: form.firstName.trim(),
-    lastName: form.lastName.trim(),
-    email: form.email?.trim() || null,
-    phone: user.phoneNumber || normalizePhone(form.phone),
-    company: form.company?.trim() || null,
-    phoneVerified: true,
-    createdAt: serverTimestamp(),
-    weeklyOrderCount: 0,  // 🆕
-    lastOrderReset: serverTimestamp(), // 🆕
-  },
-  { merge: true }
-);
+      // 3) (non-blocking) link email/password if provided
+      if (form.email && form.password) {
+        const linkInfo = await safeLinkEmail(user, form.email, form.password);
+        if (!linkInfo.linked) {
+          if (linkInfo.code === "auth/email-already-in-use") {
+            setMessage((m) => (m ? m + "\n" : "") + "Email already in use. Account created with phone only.");
+          } else if (linkInfo.code === "auth/weak-password") {
+            setMessage((m) => (m ? m + "\n" : "") + "Weak password. Email linking failed.");
+          } else if (linkInfo.error) {
+            setMessage((m) => (m ? m + "\n" : "") + `Email linking failed: ${linkInfo.error?.message || linkInfo.code}`);
+          }
+        } else {
+          setMessage((m) => (m ? m + "\n" : "") + "✓ Email linked successfully.");
+        }
+      }
 
-      console.log("verifyOtp: setDoc succeeded");
-    } catch (dbErr) {
-      console.error("verifyOtp: Firestore write failed:", dbErr);
-      setMessage(`Could not save profile: ${dbErr?.code || ""} ${dbErr?.message || dbErr}`);
-      setLoading(false);
-      return; // stop here; we won't show success text if DB write failed
-    }
+      // 4) Write user profile to Firestore
+      try {
+        if (!user || !user.uid) throw new Error("No user UID available.");
+        await setDoc(
+          doc(db, "users", user.uid),
+          {
+            uid: user.uid,
+            firstName: form.firstName.trim(),
+            lastName: form.lastName.trim(),
+            email: form.email?.trim() || null,
+            phone: user.phoneNumber || normalizePhone(form.phone),
+            company: form.company?.trim() || null,
+            phoneVerified: true,
+            createdAt: serverTimestamp(),
+            weeklyOrderCount: 0,  // 🆕
+            lastOrderReset: serverTimestamp(), // 🆕
+          },
+          { merge: true }
+        );
 
-    // ----------------------------
-    // Additional writes: deliveryAddresses and cart
-    // ----------------------------
-    try {
-      // 1) Create a deliveryAddresses document with same UID (merge in case exists)
-      const deliveryPayload = {
-        uid: user.uid,
-        recipientName: "",
-        recipientMobile: "",
-        recipientEmail: "",
-        recipientCompany: "",
-        phoneVerified: true,
-        pincode: "",
-    state: "",
-    city: "",
-        createdAt: serverTimestamp(),
-         billingName: "",
-    billingMobile: "",
-    billingEmail: "",
-    billingCompany: "",
-    billingPincode: "",
-    billingState: "",
-    billingCity: "",
+        console.log("verifyOtp: setDoc succeeded");
+        hasWrittenRef.current = true;
+      } catch (dbErr) {
+        console.error("verifyOtp: Firestore write failed:", dbErr);
+        setMessage(`Could not save profile: ${dbErr?.code || ""} ${dbErr?.message || dbErr}`);
+        setLoading(false);
+        return;
+      }
 
-      };
-      await setDoc(doc(db, "deliveryAddresses", user.uid), deliveryPayload, { merge: true });
-      console.log("verifyOtp: deliveryAddresses doc written:", user.uid);
-    } catch (delErr) {
-      console.error("verifyOtp: failed to write deliveryAddresses:", delErr);
-      // non-fatal — keep going
-    }
+      // ----------------------------
+      // Additional writes: deliveryAddresses and cart
+      // ----------------------------
+      try {
+        const deliveryPayload = {
+          uid: user.uid,
+          recipientName: "",
+          recipientMobile: "",
+          recipientEmail: "",
+          recipientCompany: "",
+          phoneVerified: true,
+          pincode: "",
+          state: "",
+          city: "",
+          createdAt: serverTimestamp(),
+          billingName: "",
+          billingMobile: "",
+          billingEmail: "",
+          billingCompany: "",
+          billingPincode: "",
+          billingState: "",
+          billingCity: "",
+        };
+        await setDoc(doc(db, "deliveryAddresses", user.uid), deliveryPayload, { merge: true });
+        console.log("verifyOtp: deliveryAddresses doc written:", user.uid);
+      } catch (delErr) {
+        console.error("verifyOtp: failed to write deliveryAddresses:", delErr);
+      }
 
-try {
-      // 1) Create a deliveryAddresses document with same UID (merge in case exists)
-      const cartPayload = {
-        uid: user.uid,
-        items:"",
-        
-      };
-      await setDoc(doc(db, "carts", user.uid), cartPayload, { merge: true });
-      console.log("verifyOtp: carts doc written:", user.uid);
-    } catch (delErr) {
-      console.error("verifyOtp: failed to write carts:", delErr);
-      // non-fatal — keep going
-    }
+      try {
+        const cartPayload = {
+          uid: user.uid,
+          items: "",
+        };
+        await setDoc(doc(db, "carts", user.uid), cartPayload, { merge: true });
+        console.log("verifyOtp: carts doc written:", user.uid);
+      } catch (delErr) {
+        console.error("verifyOtp: failed to write carts:", delErr);
+      }
 
+      // 5) Create an empty cart (to be filled later when user books a sample)
+      try {
+        const emptyCartPayload = {
+          uid: user.uid,
+          items: [], // intentionally empty
+          createdAt: serverTimestamp(),
+          lastUpdated: serverTimestamp(),
+        };
+        await setDoc(doc(db, "carts", user.uid), emptyCartPayload, { merge: true });
+        console.log("verifyOtp: empty cart initialized:", user.uid);
+      } catch (cartErr) {
+        console.error("verifyOtp: failed to initialize empty cart:", cartErr);
+      }
 
-// 5) Create an empty cart (to be filled later when user books a sample)
-try {
-  const emptyCartPayload = {
-    uid: user.uid,
-    items: [], // intentionally empty
-    createdAt: serverTimestamp(),
-    lastUpdated: serverTimestamp(),
-  };
-  await setDoc(doc(db, "carts", user.uid), emptyCartPayload, { merge: true });
-  console.log("verifyOtp: empty cart initialized:", user.uid);
-} catch (cartErr) {
-  console.error("verifyOtp: failed to initialize empty cart:", cartErr);
-}
+      // 5) Create an empty cart (duplicate from your code, kept as-is)
+      try {
+        const emptyCartPayload = {
+          uid: user.uid,
+          items: [], // intentionally empty
+          createdAt: serverTimestamp(),
+          lastUpdated: serverTimestamp(),
+        };
+        await setDoc(doc(db, "carts", user.uid), emptyCartPayload, { merge: true });
+        console.log("verifyOtp: empty cart initialized:", user.uid);
+      } catch (cartErr) {
+        console.error("verifyOtp: failed to initialize empty cart:", cartErr);
+      }
 
+      try {
+        const ordersPayload = {
+          uid: user.uid,
+          items: [], // always an array
+          createdAt: serverTimestamp(),
+          lastUpdated: serverTimestamp(),
+        };
+        await setDoc(doc(db, "orders", user.uid), ordersPayload, { merge: true });
+        console.log("verifyOtp: orders doc written:", user.uid);
+      } catch (err) {
+        console.error("verifyOtp: failed to write orders:", err);
+      }
 
+      // ✅ behave like login: finish and go home immediately
+      readyToRedirectRef.current = true;      // for observer (harmless)
+      setConfirmationResult(null);
+      setOtp("");
 
+      // IMPORTANT: avoid sign-out in cleanup after navigating
+      didNavigateRef.current = true;
+      navigate("/", { replace: true });
 
-
-// 5) Create an empty cart (to be filled later when user books a sample)
-try {
-  const emptyCartPayload = {
-    uid: user.uid,
-    items: [], // intentionally empty
-    createdAt: serverTimestamp(),
-    lastUpdated: serverTimestamp(),
-  };
-  await setDoc(doc(db, "carts", user.uid), emptyCartPayload, { merge: true });
-  console.log("verifyOtp: empty cart initialized:", user.uid);
-} catch (cartErr) {
-  console.error("verifyOtp: failed to initialize empty cart:", cartErr);
-}
-
-
-try {
-  const ordersPayload = {
-    uid: user.uid,
-    items: [], // always an array
-    createdAt: serverTimestamp(),
-    lastUpdated: serverTimestamp(),
-  };
-  await setDoc(doc(db, "orders", user.uid), ordersPayload, { merge: true });
-  console.log("verifyOtp: orders doc written:", user.uid);
-} catch (err) {
-  console.error("verifyOtp: failed to write orders:", err);
-}
-
-
-    // 5) (optional) sign the user out so they truly need to "login now"
-    try {
-      await signOut(auth);
     } catch (e) {
-      console.warn("signOut after signup failed (non-fatal):", e);
+      console.error("verifyOtp: verification failed:", e);
+      if (e?.code === "auth/invalid-verification-code") setMessage("Invalid code. Please check and try again.");
+      else if (e?.code === "auth/code-expired") setMessage("Code expired. Please request a new OTP.");
+      else setMessage("Verification failed. " + (e?.message || String(e)));
+    } finally {
+      setLoading(false);
     }
-
-    // 6) Show final success message; DO NOT redirect
-    setConfirmationResult(null);   // collapse OTP UI
-    setOtp("");
-    setMessage("✓ Account created. You can log in now.");
-  } catch (e) {
-    console.error("verifyOtp: verification failed:", e);
-    if (e?.code === "auth/invalid-verification-code") setMessage("Invalid code. Please check and try again.");
-    else if (e?.code === "auth/code-expired") setMessage("Code expired. Please request a new OTP.");
-    else setMessage("Verification failed. " + (e?.message || String(e)));
-  } finally {
-    setLoading(false);
-  }
-};
-
-
+  };
 
   // ---------- UI ----------
   return (

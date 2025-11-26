@@ -46,6 +46,31 @@
   color: #000;
 }
 
+/* Cart badge */
+.cart-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  background: #e63946;   /* red bubble */
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 0 0 2px #fff; /* white ring */
+}
+
+
 .signin-btn {
   background-color: #2e2e2e;
   color: #fff;

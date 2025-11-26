@@ -5,824 +5,958 @@ import { db } from "./../../firebaseConfig.jsx";
 import { collection, getDocs } from "firebase/firestore";
 import Footer from "./Footer";
 
-
-
+// ✅ NEW: extra Firestore utilities (added without touching existing imports)
+import {
+  doc,
+  setDoc,
+  updateDoc,
+  increment,
+  serverTimestamp,
+  collection as fsCollection,
+  query as fsQuery,
+  orderBy,
+  limit as fsLimit,
+} from "firebase/firestore";
 
 const ProductSearch = () => {
-    // State declarations
-    const [products, setProducts] = useState([]);
-    const [filteredProducts, setFilteredProducts] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);
-    const productsPerPage = 6;
-    const collectionName = "products";
+  // State declarations
+  const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 6;
+  const collectionName = "products";
 
+  // (Removed synonymsCache since synonyms functionality has been removed)
+  // const synonymsCache = useRef({});
 
+  const [selectedCategories, setSelectedCategories] = useState(new Set());
+  const [selectedFinish, setSelectedFinish] = useState("");
+  const [selectedBrand, setSelectedBrand] = useState(""); // NEW: selected brand
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(Infinity);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [searchText, setSearchText] = useState("");
+  // Active search query state
+  const [activeQuery, setActiveQuery] = useState("");
+  const [loading, setLoading] = useState(false);
 
+  // New state: whether to show the "No results" message after 10 sec.
+  const [showNoResultsDelayed, setShowNoResultsDelayed] = useState(false);
 
-    // (Removed synonymsCache since synonyms functionality has been removed)
-    // const synonymsCache = useRef({});
+  // For showing/hiding the category dropdown
+  const [categoryDropdownVisible, setCategoryDropdownVisible] = useState(false);
 
+  // Options for filters (populated from products)
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  const [finishOptions, setFinishOptions] = useState([]);
+  const [brandOptions, setBrandOptions] = useState([]); // NEW: brand options
 
+  // For size filtering: maintain the size sub-category and size options
+  const [sizeCategories, setSizeCategories] = useState([]);
+  const [sizeOptions, setSizeOptions] = useState([]);
 
+  // ======== ADD: Session persistence helpers (do not change existing functions) ========
+  const SESSION_KEY = "productSearchState_v1";
 
-    const [selectedCategories, setSelectedCategories] = useState(new Set());
-    const [selectedFinish, setSelectedFinish] = useState("");
-    const [minPrice, setMinPrice] = useState(0);
-    const [maxPrice, setMaxPrice] = useState(Infinity);
-    const [selectedSize, setSelectedSize] = useState("");
-    const [searchText, setSearchText] = useState("");
-    // Active search query state
-    const [activeQuery, setActiveQuery] = useState("");
-    const [loading, setLoading] = useState(false);
+  const saveSearchState = () => {
+    try {
+      const state = {
+        searchText,
+        activeQuery,
+        selectedCategories: Array.from(selectedCategories),
+        selectedFinish,
+        selectedBrand, // persist brand
+        selectedSize,
+        minPrice,
+        maxPrice: Number.isFinite(maxPrice) ? maxPrice : null,
+        currentPage,
+      };
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
+    } catch (e) {
+      // ignore storage errors
+    }
+  };
 
+  const loadSearchState = () => {
+    try {
+      const raw = sessionStorage.getItem(SESSION_KEY);
+      if (!raw) return null;
+      const s = JSON.parse(raw);
+      return {
+        ...s,
+        selectedCategories: new Set(s.selectedCategories || []),
+        maxPrice: s.maxPrice == null ? Infinity : s.maxPrice,
+      };
+    } catch {
+      return null;
+    }
+  };
 
+  // A ref flag to signal we should re-run search after products arrive
+  const restoreRef = useRef(false);
+  // =====================================================================
 
+  // ✅ NEW: Analytics helpers (added without changing any existing function)
+  const normalizeKeyword = (kw) =>
+    kw.trim().toLowerCase().replace(/\s+/g, " ").slice(0, 80);
 
-    // New state: whether to show the "No results" message after 10 sec.
-    const [showNoResultsDelayed, setShowNoResultsDelayed] = useState(false);
+  const bumpCounter = async (colName, id, extra = {}) => {
+    if (!id) return;
+    const ref = doc(db, colName, id);
+    try {
+      await updateDoc(ref, {
+        count: increment(1),
+        updatedAt: serverTimestamp(),
+        ...extra,
+      });
+    } catch {
+      await setDoc(
+        ref,
+        {
+          count: 1,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          ...extra,
+        },
+        { merge: true }
+      );
+    }
+  };
 
+  const logSearchKeywords = async ({ keywords, fullQuery, resultCount }) => {
+    try {
+      const ops = keywords.map((kw) =>
+        bumpCounter("search_keywords", normalizeKeyword(kw), {
+          lastQuery: fullQuery,
+          lastResultCount: resultCount,
+        })
+      );
 
+      ops.push(
+        bumpCounter("search_queries", normalizeKeyword(fullQuery), {
+          lastResultCount: resultCount,
+        })
+      );
 
-
-    // For showing/hiding the category dropdown
-    const [categoryDropdownVisible, setCategoryDropdownVisible] = useState(false);
-
-
-
-
-    // Options for filters (populated from products)
-    const [categoryOptions, setCategoryOptions] = useState([]);
-    const [finishOptions, setFinishOptions] = useState([]);
-
-
-
-
-    // For size filtering: maintain the size sub-category and size options
-    const [sizeCategories, setSizeCategories] = useState([]);
-    const [sizeOptions, setSizeOptions] = useState([]);
-
-
-
-
-    // Define static size filters
-    const sizeFilters = {
-        Standard: [
-            "400x800",
-            "300x600",
-            "300x300",
-            "400x400",
-            "600x600",
-            "1200x2800",
-            "600x1200",
-            "800x1600",
-            "1200x1800",
-            "1200x2400",
-            "1200x2780",
-        ],
-        Mosaic: [
-            "100x100",
-            "102x92",
-            "48x48",
-            "50x50",
-            "75x150",
-            "75x225",
-            "75x300",
-            "75x80",
-            "85x150",
-        ],
-        Subway: ["100x200", "100x300", "110x110", "75x300"],
-        Others: [
-            "1000x3000",
-            "1500x3000",
-            "1800x1200",
-            "198x198",
-            "225x60",
-            "790x2600",
-            "225x60",
-            "80x160",
-            "60x120",
-            "1200x1200",
-            "900x180",
-            "800x800",
-            "800x3200",
-            "800x3000",
-            "200x1200",
-        ],
-    };
-
-
-
-
-    // Helper: sort sizes by area (width * height)
-    const sortByArea = (sizesArray) => {
-        return sizesArray.slice().sort((a, b) => {
-            const [w1, h1] = a.split("x").map(Number);
-            const [w2, h2] = b.split("x").map(Number);
-            return w1 * h1 - w2 * h2;
-        });
-    };
-
-
-
-
-    // Create sorted arrays for each size category and set default options
-    const sizeFiltersSorted = {
-        Standard: sortByArea(sizeFilters.Standard),
-        Mosaic: sortByArea(sizeFilters.Mosaic),
-        Subway: sortByArea(sizeFilters.Subway),
-        Others: sortByArea(sizeFilters.Others),
-    };
-
-
-
-
-    // On mount, set the size sub-categories and default size options (all sizes)
-    useEffect(() => {
-        const cats = Object.keys(sizeFiltersSorted);
-        setSizeCategories(cats);
-        // Default: combine all sizes (avoid duplicates)
-        const allSizesSet = new Set();
-        Object.values(sizeFiltersSorted).forEach((arr) =>
-            arr.forEach((size) => allSizesSet.add(size))
+      if (resultCount === 0) {
+        ops.push(
+          bumpCounter("search_no_results", normalizeKeyword(fullQuery), {})
         );
-        const allSizesArray = Array.from(allSizesSet).sort((a, b) => {
-            const [w1, h1] = a.split("x").map(Number);
-            const [w2, h2] = b.split("x").map(Number);
-            return w1 * h1 - w2 * h2;
+      }
+
+      // fire-and-forget
+      Promise.allSettled(ops);
+    } catch {
+      // ignore analytics errors
+    }
+  };
+
+  const logProductClick = async (productId) => {
+    try {
+      if (!productId) return;
+      // fire-and-forget
+      bumpCounter("product_clicks", String(productId));
+    } catch {
+      // ignore analytics errors
+    }
+  };
+
+  // (Optional) quick readers for a future admin panel
+  const getTopSearchedKeywords = async (n = 3) => {
+    const q = fsQuery(
+      fsCollection(db, "search_keywords"),
+      orderBy("count", "desc"),
+      fsLimit(n)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ keyword: d.id, ...d.data() }));
+  };
+
+  const getTopClickedProducts = async (n = 3) => {
+    const q = fsQuery(
+      fsCollection(db, "product_clicks"),
+      orderBy("count", "desc"),
+      fsLimit(n)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ product_id: d.id, ...d.data() }));
+  };
+
+  const getTopNoResultQueries = async (n = 3) => {
+    const q = fsQuery(
+      fsCollection(db, "search_no_results"),
+      orderBy("count", "desc"),
+      fsLimit(n)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ query: d.id, ...d.data() }));
+  };
+  // =====================================================================
+
+  // Define static size filters
+  const sizeFilters = {
+    Standard: [
+      "400x800",
+      "300x600",
+      "300x300",
+      "400x400",
+      "600x600",
+      "1200x2800",
+      "600x1200",
+      "800x1600",
+      "1200x1800",
+      "1200x2400",
+      "1200x2780",
+    ],
+    Mosaic: [
+      "100x100",
+      "102x92",
+      "48x48",
+      "50x50",
+      "75x150",
+      "75x225",
+      "75x300",
+      "75x80",
+      "85x150",
+    ],
+    Subway: ["100x200", "100x300", "110x110", "75x300"],
+    Others: [
+      "1000x3000",
+      "1500x3000",
+      "1800x1200",
+      "198x198",
+      "225x60",
+      "790x2600",
+      "225x60",
+      "80x160",
+      "60x120",
+      "1200x1200",
+      "900x180",
+      "800x800",
+      "800x3200",
+      "800x3000",
+      "200x1200",
+    ],
+  };
+
+  // Helper: sort sizes by area (width * height)
+  const sortByArea = (sizesArray) => {
+    return sizesArray.slice().sort((a, b) => {
+      const [w1, h1] = a.split("x").map(Number);
+      const [w2, h2] = b.split("x").map(Number);
+      return w1 * h1 - w2 * h2;
+    });
+  };
+
+  // Create sorted arrays for each size category and set default options
+  const sizeFiltersSorted = {
+    Standard: sortByArea(sizeFilters.Standard),
+    Mosaic: sortByArea(sizeFilters.Mosaic),
+    Subway: sortByArea(sizeFilters.Subway),
+    Others: sortByArea(sizeFilters.Others),
+  };
+
+  // On mount, set the size sub-categories and default size options (all sizes)
+  useEffect(() => {
+    const cats = Object.keys(sizeFiltersSorted);
+    setSizeCategories(cats);
+    // Default: combine all sizes (avoid duplicates)
+    const allSizesSet = new Set();
+    Object.values(sizeFiltersSorted).forEach((arr) =>
+      arr.forEach((size) => allSizesSet.add(size))
+    );
+    const allSizesArray = Array.from(allSizesSet).sort((a, b) => {
+      const [w1, h1] = a.split("x").map(Number);
+      const [w2, h2] = b.split("x").map(Number);
+      return w1 * h1 - w2 * h2;
+    });
+    setSizeOptions(allSizesArray);
+  }, []);
+
+  // ======== ADD: On first mount, attempt to restore saved search state ========
+  useEffect(() => {
+    const restored = loadSearchState();
+    if (restored) {
+      setSearchText(restored.searchText || "");
+      setActiveQuery(restored.activeQuery || "");
+      setSelectedCategories(restored.selectedCategories || new Set());
+      setSelectedFinish(restored.selectedFinish || "");
+      setSelectedBrand(restored.selectedBrand || ""); // restore brand
+      setSelectedSize(restored.selectedSize || "");
+      setMinPrice(restored.minPrice ?? 0);
+      setMaxPrice(restored.maxPrice ?? Infinity);
+      setCurrentPage(restored.currentPage || 1);
+      // mark that after products load we should recompute results
+      restoreRef.current = true;
+    }
+  }, []);
+  // ===========================================================================
+
+  // Fetch products from Firestore on component mount
+  useEffect(() => {
+    const fetchAllProducts = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, collectionName));
+        const prods = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            ...data,
+            finish:
+              typeof data.finish === "string" &&
+              data.finish.toLowerCase() === "high gloss"
+                ? "Marble"
+                : data.finish,
+          };
         });
-        setSizeOptions(allSizesArray);
-    }, []);
+        setProducts(prods);
+        // Initially, do not show any products until a search is performed.
+        setFilteredProducts([]);
+      } catch (error) {
+        console.error("Error fetching products: ", error);
+      }
+    };
 
+    fetchAllProducts();
+  }, [collectionName]);
 
+  // ======== ADD: After products arrive, if we restored a query, re-run search once ========
+  useEffect(() => {
+    if (restoreRef.current && products.length) {
+      // Recompute results using already-restored filters/query
+      // This uses your existing searchProducts function.
+      searchProducts();
+      restoreRef.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products]);
+  // ============================================================================
 
+  // Update category, finish and brand options when products change
+  useEffect(() => {
+    const categories = new Set();
+    const finishes = new Set();
+    const brands = new Set();
 
-    // Fetch products from Firestore on component mount
-    useEffect(() => {
-        const fetchAllProducts = async () => {
-            try {
-                const querySnapshot = await getDocs(collection(db, collectionName));
-                const prods = querySnapshot.docs.map((doc) => {
-                    const data = doc.data();
-                    return {
-                        ...data,
-                        finish:
-                            typeof data.finish === "string" &&
-                                data.finish.toLowerCase() === "high gloss"
-                                ? "Marble"
-                                : data.finish,
-                    };
-                });
-                setProducts(prods);
-                // Initially, do not show any products until a search is performed.
-                setFilteredProducts([]);
-            } catch (error) {
-                console.error("Error fetching products: ", error);
-            }
-        };
+    products.forEach((product) => {
+      if (product.category && Array.isArray(product.category)) {
+        product.category.forEach((cat) => categories.add(cat));
+      }
+      if (Array.isArray(product.finish)) {
+        product.finish.forEach((f) => finishes.add(f.trim()));
+      } else if (typeof product.finish === "string") {
+        product.finish
+          .split(",")
+          .map((f) => f.trim())
+          .forEach((f) => finishes.add(f));
+      }
 
-
-
-
-        fetchAllProducts();
-    }, [collectionName]);
-
-
-
-
-    // Update category and finish options when products change
-    useEffect(() => {
-        const categories = new Set();
-        const finishes = new Set();
-        products.forEach((product) => {
-            if (product.category && Array.isArray(product.category)) {
-                product.category.forEach((cat) => categories.add(cat));
-            }
-            if (Array.isArray(product.finish)) {
-                product.finish.forEach((f) => finishes.add(f.trim()));
-            } else if (typeof product.finish === "string") {
-                product.finish
-                    .split(",")
-                    .map((f) => f.trim())
-                    .forEach((f) => finishes.add(f));
-            }
+      // NEW: collect brands (handle array or string)
+      if (Array.isArray(product.Brand)) {
+        product.Brand.forEach((b) => {
+          if (b && typeof b === "string") brands.add(b.trim());
         });
-        setCategoryOptions(Array.from(categories).sort());
-        setFinishOptions(Array.from(finishes).sort());
-    }, [products]);
+      } else if (typeof product.Brand === "string" && product.Brand.trim()) {
+        product.Brand.split(",").forEach((b) => brands.add(b.trim()));
+      } else if (product.Brand && typeof product.Brand === "object") {
+        // sometimes brand may be stored as objects in some setups
+        try {
+          const vals = Object.values(product.Brand);
+          vals.forEach((v) => {
+            if (typeof v === "string") brands.add(v.trim());
+          });
+        } catch {}
+      }
+    });
 
+    setCategoryOptions(Array.from(categories).sort());
+    setFinishOptions(Array.from(finishes).sort());
+    setBrandOptions(Array.from(brands).sort()); // NEW
+  }, [products]);
 
-
-
-    // Delay showing the "No results." message after 10 seconds if filteredProducts is still empty
-    useEffect(() => {
-        if (activeQuery !== "") {
-            const timer = setTimeout(() => {
-                if (filteredProducts.length === 0) {
-                    setShowNoResultsDelayed(true);
-                }
-            }, 10000); // 10 seconds
-            return () => {
-                clearTimeout(timer);
-                setShowNoResultsDelayed(false);
-            };
+  // Delay showing the "No results." message after 10 seconds if filteredProducts is still empty
+  useEffect(() => {
+    if (activeQuery !== "") {
+      const timer = setTimeout(() => {
+        if (filteredProducts.length === 0) {
+          setShowNoResultsDelayed(true);
         }
-    }, [activeQuery, filteredProducts]);
+      }, 10000); // 10 seconds
+      return () => {
+        clearTimeout(timer);
+        setShowNoResultsDelayed(false);
+      };
+    }
+  }, [activeQuery, filteredProducts]);
 
+  // Utility: Extract keywords from a sentence.
+  const extractKeywords = (sentence) => {
+    const stopWords = [
+      "a",
+      "an",
+      "the",
+      "and",
+      "or",
+      "but",
+      "on",
+      "in",
+      "with",
+      "to",
+      "of",
+      "at",
+      "by",
+      "for",
+      "as",
+      "from",
+    ];
+    return sentence
+      .toLowerCase()
+      .split(/\W+/)
+      .filter((word) => word && !stopWords.includes(word));
+  };
 
-
-
-    // Utility: Extract keywords from a sentence.
-    const extractKeywords = (sentence) => {
-        const stopWords = [
-            "a", "an", "the", "and", "or", "but", "on", "in", "with", "to", "of", "at", "by", "for", "as", "from"
-        ];
-        return sentence
-            .toLowerCase()
-            .split(/\W+/)
-            .filter((word) => word && !stopWords.includes(word));
+  // Utility: Count keyword matches using product attributes.
+  const countKeywordMatches = (product, keywords) => {
+    let matchCount = 0;
+    const { name, category, Base_Color, finish, space, attributes } = product;
+    const attributeWeights = {
+      name: 3,
+      category: 2,
+      Base_Color: 2,
+      finish: 1,
+      space: 1,
+      attributes: 2,
     };
 
-
-
-
-    // Utility: Count keyword matches using product attributes.
-    const countKeywordMatches = (product, keywords) => {
-        let matchCount = 0;
-        const { name, category, Base_Color, finish, space, attributes } = product;
-        const attributeWeights = {
-            name: 3,
-            category: 2,
-            Base_Color: 2,
-            finish: 1,
-            space: 1,
-            attributes: 2,
-        };
-
-
-
-
-        for (const keyword of keywords) {
-            const regex = new RegExp(`\\b${keyword}\\b`, "i");
-
-
-
-
-            if (
-                (name && regex.test(name)) ||
-                (category && category.some((cat) => regex.test(cat))) ||
-                (Base_Color && Base_Color.some((color) => regex.test(color))) ||
-                (finish && regex.test(finish)) ||
-                (space && regex.test(space)) ||
-                (attributes && attributes.some((attr) => regex.test(attr)))
-            ) {
-                matchCount += attributeWeights.name * 2;
-            }
-        }
-        return matchCount;
-    };
-
-
-
-
-    // Filter handlers
-
-
-
-
-    const toggleCategoryDropdown = () => {
-        setCategoryDropdownVisible(!categoryDropdownVisible);
-    };
-
-
-
-
-    // Update category filter without triggering an immediate search.
-    const updateCategoryFilter = (e) => {
-        const value = e.target.value;
-        const newSet = new Set(selectedCategories);
-        if (e.target.checked) {
-            newSet.add(value);
-        } else {
-            newSet.delete(value);
-        }
-        setSelectedCategories(newSet);
-    };
-
-
-
-
-    // Update finish filter.
-    const updateFinishFilter = (e) => {
-        setSelectedFinish(e.target.value);
-    };
-
-
-
-
-    // Normalize and update size filter.
-    const normalizeSize = (size) => {
-        if (!size) return "";
-        return size.replace(/^['"]+|['"]+$/g, "").trim().toLowerCase();
-    };
-
-
-
-
-    const updateSizeFilter = (e) => {
-        setSelectedSize(normalizeSize(e.target.value));
-    };
-
-
-
-
-    // Reset all filters.
-    const resetFilters = () => {
-        setSelectedCategories(new Set());
-        setSelectedFinish("");
-        setSelectedSize("");
-        setMinPrice(0);
-        setMaxPrice(Infinity);
-    };
-
-
-
-
-    // Modified search function with synchronous keyword matching.
-    const searchProducts = () => {
-        if (!searchText.trim()) {
-            console.log("No search input provided.");
-            setActiveQuery("");
-            setFilteredProducts([]);
-            setCurrentPage(1);
-            return;
-        }
-        setActiveQuery(searchText.trim());
-        setLoading(true);
-
-
-
-
-        const keywords = extractKeywords(searchText);
-
-
-
-
-        // Process all products synchronously.
-        const scoredProductsResults = products.map((product) => {
-            const matchCount = countKeywordMatches(product, keywords);
-            return matchCount > 0 ? { product, matchCount } : null;
-        });
-
-
-
-
-        const scoredProducts = scoredProductsResults.filter((item) => item !== null);
-        let maxMatchCount = 0;
-        scoredProducts.forEach((item) => {
-            if (item.matchCount > maxMatchCount) {
-                maxMatchCount = item.matchCount;
-            }
-        });
-
-
-
-
-        const topMatches = scoredProducts
-            .filter((item) => item.matchCount === maxMatchCount)
-            .map((item) => item.product);
-
-
-
-
-        if (topMatches.length === 0) {
-            setFilteredProducts([]);
-            setCurrentPage(1);
-            setLoading(false);
-            return;
-        }
-
-
-
-
-        // Apply additional filters: category, finish, size, and price.
-        const filteredByCategory = topMatches.filter((product) =>
-            selectedCategories.size === 0 ||
-            Array.from(selectedCategories).every((category) =>
-                product.category?.includes(category)
-            )
-        );
-
-
-
-
-        const filteredByFinish = filteredByCategory.filter((product) => {
-            if (!selectedFinish) return true;
-            let productFinishes = [];
-            if (Array.isArray(product.finish)) {
-                productFinishes = product.finish.map((f) => f.trim().toLowerCase());
-            } else if (typeof product.finish === "string") {
-                productFinishes = [product.finish.trim().toLowerCase()];
-            }
-            return productFinishes.includes(selectedFinish.toLowerCase());
-        });
-
-
-
-
-        const filteredBySize = filteredByFinish.filter((product) => {
-            if (!selectedSize) return true;
-            let productSizes = [];
-            if (Array.isArray(product.variation)) {
-                productSizes = product.variation.flatMap((variant) =>
-                    variant.size ? variant.size.map((s) => normalizeSize(s.name)) : []
-                );
-            }
-            if (Array.isArray(product.sizes)) {
-                productSizes = productSizes.concat(
-                    product.sizes.map((s) => normalizeSize(s))
-                );
-            }
-            return productSizes.includes(normalizeSize(selectedSize));
-        });
-
-
-
-
-        const filteredByPrice = filteredBySize.filter(
-            (product) => product.price >= minPrice && product.price <= maxPrice
-        );
-
-
-
-
-        setFilteredProducts(filteredByPrice);
-        setCurrentPage(1);
-        setLoading(false);
-    };
-
-
-
-
-    // useEffect to re-run the search whenever non-price filters change (if a query has already been made)
-    useEffect(() => {
-        if (activeQuery) {
-            searchProducts();
-        }
-    }, [selectedCategories, selectedFinish, selectedSize]);
-
-
-
-
-    // Pagination calculations
-    const indexOfLastProduct = currentPage * productsPerPage;
-    const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-    const currentProducts = filteredProducts.slice(
-        indexOfFirstProduct,
-        indexOfLastProduct
+    for (const keyword of keywords) {
+      const regex = new RegExp(`\\b${keyword}\\b`, "i");
+
+      if (
+        (name && regex.test(name)) ||
+        (category && category.some((cat) => regex.test(cat))) ||
+        (Base_Color && Base_Color.some((color) => regex.test(color))) ||
+        (finish && regex.test(finish)) ||
+        (space && regex.test(space)) ||
+        (attributes && attributes.some((attr) => regex.test(attr)))
+      ) {
+        matchCount += attributeWeights.name * 2;
+      }
+    }
+    return matchCount;
+  };
+
+  // Filter handlers
+
+  const toggleCategoryDropdown = () => {
+    setCategoryDropdownVisible(!categoryDropdownVisible);
+  };
+
+  // Update category filter without triggering an immediate search.
+  const updateCategoryFilter = (e) => {
+    const value = e.target.value;
+    const newSet = new Set(selectedCategories);
+    if (e.target.checked) {
+      newSet.add(value);
+    } else {
+      newSet.delete(value);
+    }
+    setSelectedCategories(newSet);
+  };
+
+  // Update finish filter.
+  const updateFinishFilter = (e) => {
+    setSelectedFinish(e.target.value);
+  };
+
+  // NEW: update brand filter
+  const updateBrandFilter = (e) => {
+    setSelectedBrand(e.target.value);
+  };
+
+  // Normalize and update size filter.
+  const normalizeSize = (size) => {
+    if (!size) return "";
+    return size.replace(/^['"]+|['"]+$/g, "").trim().toLowerCase();
+  };
+
+  const updateSizeFilter = (e) => {
+    setSelectedSize(normalizeSize(e.target.value));
+  };
+
+  // Reset all filters.
+  const resetFilters = () => {
+    setSelectedCategories(new Set());
+    setSelectedFinish("");
+    setSelectedBrand(""); // reset brand
+    setSelectedSize("");
+    setMinPrice(0);
+    setMaxPrice(Infinity);
+  };
+
+  // Modified search function with synchronous keyword matching.
+  const searchProducts = () => {
+    if (!searchText.trim()) {
+      console.log("No search input provided.");
+      setActiveQuery("");
+      setFilteredProducts([]);
+      setCurrentPage(1);
+      return;
+    }
+    setActiveQuery(searchText.trim());
+    setLoading(true);
+
+    const keywords = extractKeywords(searchText);
+
+    // Process all products synchronously.
+    const scoredProductsResults = products.map((product) => {
+      const matchCount = countKeywordMatches(product, keywords);
+      return matchCount > 0 ? { product, matchCount } : null;
+    });
+
+    const scoredProducts = scoredProductsResults.filter((item) => item !== null);
+    let maxMatchCount = 0;
+    scoredProducts.forEach((item) => {
+      if (item.matchCount > maxMatchCount) {
+        maxMatchCount = item.matchCount;
+      }
+    });
+
+    const topMatches = scoredProducts
+      .filter((item) => item.matchCount === maxMatchCount)
+      .map((item) => item.product);
+
+    if (topMatches.length === 0) {
+      setFilteredProducts([]);
+      setCurrentPage(1);
+      setLoading(false);
+
+      // ✅ NEW: record zero-result search
+      logSearchKeywords({
+        keywords,
+        fullQuery: searchText.trim(),
+        resultCount: 0,
+      });
+
+      return;
+    }
+
+    // Apply additional filters: category, finish, size, price, brand (brand added).
+    const filteredByCategory = topMatches.filter(
+      (product) =>
+        selectedCategories.size === 0 ||
+        Array.from(selectedCategories).every((category) =>
+          product.category?.includes(category)
+        )
     );
 
+    const filteredByFinish = filteredByCategory.filter((product) => {
+      if (!selectedFinish) return true;
+      let productFinishes = [];
+      if (Array.isArray(product.finish)) {
+        productFinishes = product.finish.map((f) => f.trim().toLowerCase());
+      } else if (typeof product.finish === "string") {
+        productFinishes = [product.finish.trim().toLowerCase()];
+      }
+      return productFinishes.includes(selectedFinish.toLowerCase());
+    });
 
+    // NEW: filter by brand
+    const filteredByBrand = filteredByFinish.filter((product) => {
+      if (!selectedBrand) return true;
+      // product.Brand may be array or string
+      if (Array.isArray(product.Brand)) {
+        return product.Brand.some(
+          (b) => String(b).trim().toLowerCase() === selectedBrand.toLowerCase()
+        );
+      } else if (typeof product.Brand === "string") {
+        // comma-separated or single
+        return product.Brand
+          .split(",")
+          .map((b) => b.trim().toLowerCase())
+          .includes(selectedBrand.toLowerCase());
+      }
+      return false;
+    });
 
+    const filteredBySize = filteredByBrand.filter((product) => {
+      if (!selectedSize) return true;
+      let productSizes = [];
+      if (Array.isArray(product.variation)) {
+        productSizes = product.variation.flatMap((variant) =>
+          variant.size ? variant.size.map((s) => normalizeSize(s.name)) : []
+        );
+      }
+      if (Array.isArray(product.sizes)) {
+        productSizes = productSizes.concat(
+          product.sizes.map((s) => normalizeSize(s))
+        );
+      }
+      return productSizes.includes(normalizeSize(selectedSize));
+    });
 
-    const prevPage = () => {
-        if (currentPage > 1) setCurrentPage(currentPage - 1);
-    };
+    const filteredByPrice = filteredBySize.filter(
+      (product) => product.price >= minPrice && product.price <= maxPrice
+    );
 
+    setFilteredProducts(filteredByPrice);
+    setCurrentPage(1);
+    setLoading(false);
 
+    // ✅ NEW: record this search (non-blocking)
+    logSearchKeywords({
+      keywords,
+      fullQuery: searchText.trim(),
+      resultCount: filteredByPrice.length,
+    });
+  };
 
+  // useEffect to re-run the search whenever non-price filters change (if a query has already been made)
+  useEffect(() => {
+    if (activeQuery) {
+      searchProducts();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategories, selectedFinish, selectedSize, selectedBrand]); // added selectedBrand
 
-    const nextPage = () => {
-        if (currentPage * productsPerPage < filteredProducts.length)
-            setCurrentPage(currentPage + 1);
-    };
+  // ======== ADD: Persist state whenever there is an active query ========
+  useEffect(() => {
+    if (activeQuery) {
+      saveSearchState();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    searchText,
+    activeQuery,
+    selectedCategories,
+    selectedFinish,
+    selectedBrand, // persist when brand changes
+    selectedSize,
+    minPrice,
+    maxPrice,
+    currentPage,
+  ]);
+  // =====================================================================
 
+  // Pagination calculations
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filteredProducts.slice(
+    indexOfFirstProduct,
+    indexOfLastProduct
+  );
 
+  const prevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
 
+  const nextPage = () => {
+    if (currentPage * productsPerPage < filteredProducts.length)
+      setCurrentPage(currentPage + 1);
+  };
 
-    // Show pagination only if a search has been performed and there are enough results.
-    const showPagination =
-        activeQuery !== "" && filteredProducts.length > productsPerPage;
+  // Show pagination only if a search has been performed and there are enough results.
+  const showPagination =
+    activeQuery !== "" && filteredProducts.length > productsPerPage;
 
-
-
-
-    return (
-        <>
-            <div className="container-search">
-
-
-
-
-
-                <div className="containerbox">
-                    {/* Left Column – Filters */}
-                    <div className="searchinputBox">
-                        <div className="InputHeader">Text Analysis Tool</div>
-                        <div style={{ fontSize: "16px", fontFamily: "Poppins" }}>
-                            Find Your Perfect Tile !
-                        </div>
-                        <div id="searchBar">
-                            <input
-                                type="text"
-                                id="searchInput"
-                                placeholder="Search for products..."
-                                value={searchText}
-                                onChange={(e) => {
-                                    setSearchText(e.target.value);
-                                    if (!e.target.value.trim()) {
-                                        setActiveQuery("");
-                                        setFilteredProducts([]);
-                                        setCurrentPage(1);
-                                    }
-                                }}
-                            />
-                            {/* On click, the search button calls both resetFilters() and searchProducts() */}
-                            <button
-                                className="searchbutton"
-                                onClick={() => {
-                                    resetFilters();
-                                    searchProducts();
-                                }}
-                            >
-                                Search
-                            </button>
-                        </div>
-
-
-
-
-                        {/* Category Filter */}
-                        <div id="categoryFilterContainer">
-                            <label htmlFor="categoryDropdown">Filter:</label>
-                            <div id="toggleCategoryDropdown" onClick={toggleCategoryDropdown}>
-                                Select Space
-                            </div>
-                            {categoryDropdownVisible && (
-                                <div id="categoryDropdown">
-                                    {categoryOptions.map((category) => (
-                                        <div key={category} className="category-option">
-                                            <input
-                                                type="checkbox"
-                                                value={category}
-                                                onChange={updateCategoryFilter}
-                                                checked={selectedCategories.has(category)}
-                                            />
-                                            <label>{category}</label>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-
-
-
-                        {/* Finish Filter */}
-                        <div id="finishFilterContainer">
-                            <select
-                                id="finishDropdown"
-                                value={selectedFinish}
-                                onChange={updateFinishFilter}
-                            >
-                                <option value="">All Finish</option>
-                                {finishOptions.map((finish) => (
-                                    <option key={finish} value={finish}>
-                                        {finish}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-
-
-
-                        {/* Size Filter */}
-                        <div id="sizeFilterContainer">
-                            <select
-                                id="subFilterDropdown"
-                                onChange={(e) => {
-                                    const selectedCat = e.target.value;
-                                    if (selectedCat && sizeFiltersSorted[selectedCat]) {
-                                        setSizeOptions(sizeFiltersSorted[selectedCat]);
-                                    } else {
-                                        const allSizesSet = new Set();
-                                        Object.values(sizeFiltersSorted).forEach((arr) =>
-                                            arr.forEach((size) => allSizesSet.add(size))
-                                        );
-                                        const allSizesArray = Array.from(allSizesSet).sort((a, b) => {
-                                            const [w1, h1] = a.split("x").map(Number);
-                                            const [w2, h2] = b.split("x").map(Number);
-                                            return w1 * h1 - w2 * h2;
-                                        });
-                                        setSizeOptions(allSizesArray);
-                                    }
-                                }}
-                            >
-                                <option value="">Sizes Categories</option>
-                                {sizeCategories.map((cat) => (
-                                    <option key={cat} value={cat}>
-                                        {cat}
-                                    </option>
-                                ))}
-                            </select>
-                            <select
-                                id="sizeDropdown"
-                                value={selectedSize}
-                                onChange={updateSizeFilter}
-                            >
-                                <option value="">All Sizes</option>
-                                {sizeOptions.map((size) => (
-                                    <option key={size} value={size}>
-                                        {size}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-
-
-
-                        {/* Price Filter */}
-                        <div id="priceFilterContainer">
-                            <input
-                                type="number"
-                                id="minPriceInput"
-                                placeholder="Min Price"
-                                value={minPrice === 0 ? "" : minPrice}
-                                onChange={(e) =>
-                                    setMinPrice(parseFloat(e.target.value) || 0)
-                                }
-                            />
-                            <input
-                                type="number"
-                                id="maxPriceInput"
-                                placeholder="Max Price"
-                                value={maxPrice === Infinity ? "" : maxPrice}
-                                onChange={(e) =>
-                                    setMaxPrice(parseFloat(e.target.value) || Infinity)
-                                }
-                            />
-                            <button id="applyPriceFilter" onClick={searchProducts}>
-                                Apply
-                            </button>
-                        </div>
-                    </div>
-
-
-
-
-                    <div className="vertical-line"></div>
-
-
-
-
-                    {/* Right Column – Results */}
-                    <div className="resultbox" style={{ display: "flex", flexDirection: "column", minHeight: "480px" }}>
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "row",
-                                justifyContent: "space-between",
-                                gap: "30px",
-                            }}
-                        >
-                            <h2>Search Results</h2>
-                        </div>
-
-
-
-
-                        {activeQuery === "" ? (
-                            <div id="results" style={{ marginTop: "21px", fontSize: "18px" }}>
-                                <p>No results yet. Search by Text to see results here.</p>
-                            </div>
-                        ) : (
-                            <>
-                                <div id="results" style={{ marginTop: "21px", fontSize: "18px" }}>
-                                    {showNoResultsDelayed && filteredProducts.length === 0 && <p>No results.</p>}
-                                </div>
-                                <div
-                                    id="loadingSpinner"
-                                    style={{ display: loading ? "block" : "none" }}
-                                >
-                                    <img src="loading.gif" alt="Loading..." width="50" />
-                                </div>
-                                <div id="productGrid">
-                                    {currentProducts.map((product) => (
-                                        <div
-                                            key={product.product_id}
-                                            className="product-card"
-                                            data-product-id={product.product_id}
-                                        >
-                                            <div className="image-container">
-                                                <div className="spinner"></div>
-                                                <img
-                                                    src={`https://converter.klayworld.com/convertToWebP?url=${encodeURIComponent(product.tileImage)}`}
-                                                    alt={product.name}
-                                                    loading="lazy"
-                                                    className="product-image"
-                                                    onLoad={(e) => {
-                                                        e.target.style.opacity = "1";
-                                                        if (e.target.previousSibling)
-                                                            e.target.previousSibling.remove();
-                                                    }}
-                                                    onClick={() =>
-                                                        (window.location.href = `product-details?id=${product.product_id}`)
-                                                    }
-                                                />
-                                            </div>
-
-
-
-
-                                            <strong
-                                                className="product-name"
-                                                onClick={() =>
-                                                    (window.location.href = `product-details?id=${product.product_id}`)
-                                                }
-                                            >
-                                                {product.name || "N/A"}
-                                            </strong>
-
-
-
-
-                                            <div className="icon-container">
-                                                <div className="icon-wrapper">
-                                                    <img
-                                                        src="images/icons/Walls.svg"
-                                                        alt="Wall"
-                                                        loading="lazy"
-                                                        className="icon"
-                                                    />
-                                                    <span className="icon-label">Wall</span>
-                                                </div>
-                                                <div className="icon-wrapper">
-                                                    <img
-                                                        src="images/icons/Highlight.svg"
-                                                        alt="Highlight"
-                                                        loading="lazy"
-                                                        className="icon"
-                                                    />
-                                                    <span className="icon-label">Highlight</span>
-                                                </div>
-                                                <div className="icon-wrapper">
-                                                    <img
-                                                        src="images/icons/Floor.svg"
-                                                        alt="Floor"
-                                                        loading="lazy"
-                                                        className="icon"
-                                                    />
-                                                    <span className="icon-label">Floor</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </>
-                        )}
-
-
-
-
-                        {/* Pagination buttons always at the bottom */}
-                        {showPagination && (
-                            <div className="pagination" style={{ marginTop: "auto", paddingTop: "10px" }}>
-                                <button
-                                    id="prevPage"
-                                    onClick={prevPage}
-                                    disabled={currentPage === 1}
-                                >
-                                    Previous
-                                </button>
-                                <button
-                                    id="nextPage"
-                                    onClick={nextPage}
-                                    disabled={currentPage * productsPerPage >= filteredProducts.length}
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
+  return (
+    <>
+      <div className="container-search">
+        <div className="containerbox">
+          {/* Left Column – Filters */}
+          <div className="searchinputBox">
+            <div className="InputHeader">Text Analysis Tool</div>
+            <div style={{ fontSize: "16px", fontFamily: "Poppins" }}>
+              Find Your Perfect Tile !
+            </div>
+            <div id="searchBar">
+              <input
+                type="text"
+                id="searchInput"
+                placeholder="Search for products..."
+                value={searchText}
+                onChange={(e) => {
+                  setSearchText(e.target.value);
+                  if (!e.target.value.trim()) {
+                    setActiveQuery("");
+                    setFilteredProducts([]);
+                    setCurrentPage(1);
+                  }
+                }}
+              />
+              {/* On click, the search button calls both resetFilters() and searchProducts() */}
+              <button
+                className="searchbutton"
+                onClick={() => {
+                  resetFilters();
+                  searchProducts();
+                }}
+              >
+                Search
+              </button>
             </div>
 
-            <Footer />
-        </>
-    );
+            {/* Category Filter */}
+            <div id="categoryFilterContainer">
+              <label htmlFor="categoryDropdown">Filter:</label>
+              <div id="toggleCategoryDropdown" onClick={toggleCategoryDropdown}>
+                Select Space
+              </div>
+              {categoryDropdownVisible && (
+                <div id="categoryDropdown">
+                  {categoryOptions.map((category) => (
+                    <div key={category} className="category-option">
+                      <input
+                        type="checkbox"
+                        value={category}
+                        onChange={updateCategoryFilter}
+                        checked={selectedCategories.has(category)}
+                      />
+                      <label>{category}</label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Finish Filter */}
+            <div id="finishFilterContainer">
+              <select
+                id="finishDropdown"
+                value={selectedFinish}
+                onChange={updateFinishFilter}
+              >
+                <option value="">All Finish</option>
+                {finishOptions.map((finish) => (
+                  <option key={finish} value={finish}>
+                    {finish}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* NEW: Brand Filter */}
+            <div id="brandFilterContainer" style={{ marginTop: "10px" }}>
+              <select
+                id="brandDropdown"
+                value={selectedBrand}
+                onChange={updateBrandFilter}
+              >
+                <option value="">All Brands</option>
+                {brandOptions.map((brand) => (
+                  <option key={brand} value={brand}>
+                    {brand}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Size Filter */}
+            <div id="sizeFilterContainer">
+              <select
+                id="subFilterDropdown"
+                onChange={(e) => {
+                  const selectedCat = e.target.value;
+                  if (selectedCat && sizeFiltersSorted[selectedCat]) {
+                    setSizeOptions(sizeFiltersSorted[selectedCat]);
+                  } else {
+                    const allSizesSet = new Set();
+                    Object.values(sizeFiltersSorted).forEach((arr) =>
+                      arr.forEach((size) => allSizesSet.add(size))
+                    );
+                    const allSizesArray = Array.from(allSizesSet).sort((a, b) => {
+                      const [w1, h1] = a.split("x").map(Number);
+                      const [w2, h2] = b.split("x").map(Number);
+                      return w1 * h1 - w2 * h2;
+                    });
+                    setSizeOptions(allSizesArray);
+                  }
+                }}
+              >
+                <option value="">Sizes Categories</option>
+                {sizeCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+              <select
+                id="sizeDropdown"
+                value={selectedSize}
+                onChange={updateSizeFilter}
+              >
+                <option value="">All Sizes</option>
+                {sizeOptions.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Price Filter */}
+             <div id="priceFilterContainer">
+              <input
+                type="number"
+                id="minPriceInput"
+                placeholder="Min Price"
+                value={minPrice === 0 ? "" : minPrice}
+                onChange={(e) =>
+                  setMinPrice(parseFloat(e.target.value) || 0)
+                }
+              />
+              <input
+                type="number"
+                id="maxPriceInput"
+                placeholder="Max Price"
+                value={maxPrice === Infinity ? "" : maxPrice}
+                onChange={(e) =>
+                  setMaxPrice(parseFloat(e.target.value) || Infinity)
+                }
+              />
+              <button id="applyPriceFilter" onClick={searchProducts}>
+                Apply
+              </button>
+            </div>
+          </div>
+
+          <div className="vertical-line"></div>
+
+          {/* Right Column – Results */}
+          <div
+            className="resultbox"
+            style={{ display: "flex", flexDirection: "column", minHeight: "480px" }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "space-between",
+                gap: "30px",
+              }}
+            >
+              <h2>Search Results</h2>
+            </div>
+
+            {activeQuery === "" ? (
+              <div id="results" style={{ marginTop: "21px", fontSize: "18px" }}>
+                <p>No results yet. Search by Text to see results here.</p>
+              </div>
+            ) : (
+              <>
+                <div id="results" style={{ marginTop: "21px", fontSize: "18px" }}>
+                  {showNoResultsDelayed && filteredProducts.length === 0 && (
+                    <p>No results.</p>
+                  )}
+                </div>
+                <div
+                  id="loadingSpinner"
+                  style={{ display: loading ? "block" : "none" }}
+                >
+                  <img src="loading.gif" alt="Loading..." width="50" />
+                </div>
+                <div id="productGrid">
+                  {currentProducts.map((product) => (
+                    <div
+                      key={product.product_id}
+                      className="product-card"
+                      data-product-id={product.product_id}
+                    >
+                      <div className="image-container">
+                        <div className="spinner"></div>
+                        <img
+                          src={`https://converter.klayworld.com/convertToWebP?url=${encodeURIComponent(
+                            product.tileImage
+                          )}`}
+                          alt={product.name}
+                          loading="lazy"
+                          className="product-image"
+                          onLoad={(e) => {
+                            e.target.style.opacity = "1";
+                            if (e.target.previousSibling)
+                              e.target.previousSibling.remove();
+                          }}
+                          onClick={() => {
+                            // ======== ADD: save before navigation (no function changed) ========
+                            saveSearchState();
+                            // ✅ NEW: log click (non-blocking, no await)
+                            logProductClick(product.product_id);
+                            window.location.href = `product-details?id=${product.product_id}`;
+                          }}
+                        />
+                      </div>
+
+                      <strong
+                        className="product-name"
+                        onClick={() => {
+                          // ======== ADD: save before navigation (no function changed) ========
+                          saveSearchState();
+                          // ✅ NEW: log click (non-blocking, no await)
+                          logProductClick(product.product_id);
+                          window.location.href = `product-details?id=${product.product_id}`;
+                        }}
+                      >
+                        {product.name || "N/A"}
+                      </strong>
+
+                      <div className="icon-container">
+                        <div className="icon-wrapper">
+                          <img
+                            src="images/icons/Walls.svg"
+                            alt="Wall"
+                            loading="lazy"
+                            className="icon"
+                          />
+                          <span className="icon-label">Wall</span>
+                        </div>
+                        <div className="icon-wrapper">
+                          <img
+                            src="images/icons/Highlight.svg"
+                            alt="Highlight"
+                            loading="lazy"
+                            className="icon"
+                          />
+                          <span className="icon-label">Highlight</span>
+                        </div>
+                        <div className="icon-wrapper">
+                          <img
+                            src="images/icons/Floor.svg"
+                            alt="Floor"
+                            loading="lazy"
+                            className="icon"
+                          />
+                          <span className="icon-label">Floor</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Pagination buttons always at the bottom */}
+            {showPagination && (
+              <div
+                className="pagination"
+                style={{ marginTop: "auto", paddingTop: "10px" }}
+              >
+                <button id="prevPage" onClick={prevPage} disabled={currentPage === 1}>
+                  Previous
+                </button>
+                <button
+                  id="nextPage"
+                  onClick={nextPage}
+                  disabled={currentPage * productsPerPage >= filteredProducts.length}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </>
+  );
 };
 
-
-
-
 export default ProductSearch;
-
-
-
-
-
-
-
-
-

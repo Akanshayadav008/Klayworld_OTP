@@ -2,8 +2,8 @@ import React from 'react';
 import './OrderSummary.css';
 
 const OrderSummary = () => {
-  const subtotal = 4500;
-  const delivery = 20;
+  const subtotal = 0;
+  const delivery = 0;
   const discount = 0;
   const total = subtotal + delivery - discount;
 
